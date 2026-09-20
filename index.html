@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
+<link rel="icon" type="image/png" href="./ymjh.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>116學年度高雄區免試入學落點預測｜我的成績 → 歷史落點 → 提升一級 → 新增志願</title>
+<title>116學年度高雄區免試入學落點預測</title>
+<link rel="icon" type="image/png" href="./ymjh.png">
+<link rel="shortcut icon" type="image/png" href="./ymjh.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -740,7 +743,7 @@ footer .fine{font-size:.78rem; color:#8B92C0;}
 .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);}
 </style>
 <link href="modern-ui.css?v=20260919" rel="stylesheet">
-<link href="analysis-dashboard.css?v=20260919e" rel="stylesheet">
+<link href="analysis-dashboard.css?v=20260920a" rel="stylesheet">
 </head>
 <body>
 
@@ -823,6 +826,22 @@ footer .fine{font-size:.78rem; color:#8B92C0;}
             </select>
             <p class="target-select-help">已依「學校性質」分類；每一類內依歷史參考<strong>積分由高到低</strong>、同積分再依<strong>積點由高到低</strong>排列，方便快速找到目標校系。</p>
             <div id="targetSchoolPicked"></div>
+
+            <section class="rank-reference-box" id="rankReferenceBox" aria-labelledby="rankReferenceTitle">
+              <div class="rank-reference-head">
+                <div>
+                  <h4 id="rankReferenceTitle">排名參考試算（選填）</h4>
+                  <p>依 115 年歷史招生人數推估的參考區間；不是正式錄取排名，也不保證錄取。</p>
+                </div>
+                <span>歷史推估</span>
+              </div>
+              <div class="rank-input-grid">
+                <label>全體試算序位<input id="generalRank" type="number" min="1" inputmode="numeric" placeholder="例如：1650"></label>
+                <label>區男試算排名<input id="maleRank" type="number" min="1" inputmode="numeric" placeholder="例如：702"></label>
+                <label>區女試算排名<input id="femaleRank" type="number" min="1" inputmode="numeric" placeholder="例如：702"></label>
+              </div>
+              <div class="rank-reference-result" id="rankReferenceResult" aria-live="polite"></div>
+            </section>
 
             <div class="strategy-box" id="strategyBox">
               <div class="strategy-head">
@@ -1218,6 +1237,8 @@ let gender = null;
 let targetSchoolId = null;
 let subjectStrength = { chinese:"normal", math:"normal", english:"normal", social:"normal", science:"normal" };
 let strategyGoal = "fastest";
+let rankReferenceData = [];
+let rankInputs = { general:"", male:"", female:"" };
 
 function loadSubjects(){
   try{
@@ -1246,13 +1267,19 @@ function loadSubjects(){
       });
     }
     if (["fastest","balanced","weakFirst","safe"].includes(parsed.strategyGoal)) strategyGoal = parsed.strategyGoal;
+    if (parsed.rankInputs && typeof parsed.rankInputs === "object") {
+      ["general","male","female"].forEach(key => {
+        const value = Number.parseInt(parsed.rankInputs[key], 10);
+        if (Number.isInteger(value) && value > 0) rankInputs[key] = String(value);
+      });
+    }
     // 已填過的科目重新開啟時維持收合；若尚未完成，直接展開下一個待填科目。
     expandedSubjectKey = SUBJECTS.find(s=>!subjects[s.key])?.key || null;
   }catch(e){ /* ignore corrupted storage */ }
 }
 function saveSubjects(){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ gender, subjects, writingLevel, targetSchoolId, subjectStrength, strategyGoal }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ gender, subjects, writingLevel, targetSchoolId, subjectStrength, strategyGoal, rankInputs }));
   }catch(e){ /* storage may be unavailable; app still works in-memory */ }
 }
 function clearSubjects(){
@@ -1263,6 +1290,7 @@ function clearSubjects(){
   targetSchoolId = null;
   subjectStrength = { chinese:"normal", math:"normal", english:"normal", social:"normal", science:"normal" };
   strategyGoal = "fastest";
+  rankInputs = { general:"", male:"", female:"" };
   try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
 }
 
@@ -1899,6 +1927,39 @@ function renderStrategyPreferences(){
 let strategyRequestSeq = 0; // 用來忽略「使用者已經切換志願/策略」後才回來的舊回應。
 const STRATEGY_LOADING_HTML = '<div class="target-empty">🔄 正在向策略伺服器計算個人化建議…</div>';
 
+function getSelectedRankReference(){
+  const entry = getComparableFlatList().find(item => item.id === targetSchoolId);
+  if (!entry) return null;
+  return rankReferenceData.find(item => item.school === entry.school && item.dept === entry.dept) || null;
+}
+
+function renderRankReference(){
+  const result = el("rankReferenceResult");
+  ["general","male","female"].forEach(type => {
+    const input = el(`${type}Rank`);
+    if (input) input.value = rankInputs[type] || "";
+  });
+  const reference = getSelectedRankReference();
+  if (!reference) {
+    result.innerHTML = '<span class="rank-neutral">選擇具排名參考資料的公立高中後，會顯示適用的試算序位與歷史區間。</span>';
+    return;
+  }
+  const labels = { general:"全體試算序位", male:"區男試算排名", female:"區女試算排名" };
+  const rank = Number.parseInt(rankInputs[reference.rankingType], 10);
+  const range = `${reference.rankStart}–${reference.rankEnd} 名`;
+  const base = `<b>${reference.school}｜${reference.dept}</b>適用「${labels[reference.rankingType]}」；115 年歷史招生人數推估區間為 <b>${range}</b>。`;
+  if (!Number.isInteger(rank) || rank < 1) {
+    result.innerHTML = `<span class="rank-neutral">${base} 請輸入對應序位以查看提醒。</span>`;
+    return;
+  }
+  if (reference.warningStart && rank >= reference.warningStart && rank <= reference.warningEnd) {
+    result.innerHTML = `<span class="rank-warning"><b>接近 714 名歷史人數提醒</b>：${base} 你輸入的序位為 <b>${rank} 名</b>，位於 ${reference.warningStart}–${reference.warningEnd} 名注意區間；實際結果仍受當年招生名額、志願序與超額比序影響。</span>`;
+    return;
+  }
+  const position = rank >= reference.rankStart && rank <= reference.rankEnd ? "位於" : "不在";
+  result.innerHTML = `<span class="rank-neutral">${base} 你輸入的序位為 <b>${rank} 名</b>，${position}此歷史推估區間。此資訊僅供參考，非錄取保證。</span>`;
+}
+
 function renderTargetSchoolSelector(){
   const select=el("targetSchoolSelect"), pickedBox=el("targetSchoolPicked"), resultBox=el("targetSchoolResult");
   if(!select || !pickedBox || !resultBox) return;
@@ -2484,6 +2545,7 @@ function renderAll(){
   renderGenderSelector();
   renderInputProgress();
   renderTargetSchoolSelector();
+  renderRankReference();
   renderSubjectCards();
   renderFiveAExplain();
   renderDashboard();
@@ -2514,6 +2576,7 @@ function initEventHandlers(){
     targetSchoolId = el("targetSchoolSelect").value || null;
     saveSubjects();
     renderTargetSchoolSelector();
+    renderRankReference();
   });
   el("btnReenter").addEventListener("click", ()=>{
     clearSubjects();
@@ -2533,6 +2596,13 @@ function initEventHandlers(){
   el("directorySearch").addEventListener("input", renderScoreDirectory);
   el("directoryCategory").addEventListener("change", renderScoreDirectory);
   el("directorySort").addEventListener("change", renderScoreDirectory);
+  ["general","male","female"].forEach(type => {
+    el(`${type}Rank`).addEventListener("input", () => {
+      rankInputs[type] = el(`${type}Rank`).value.replace(/\D/g, "");
+      saveSubjects();
+      renderRankReference();
+    });
+  });
 
   document.querySelectorAll("[data-scroll]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -2610,11 +2680,16 @@ function applyCutoffRecords(records){
 }
 
 async function loadAdmissionData(){
-  const response = await fetch(`${STRATEGY_API_BASE}/api/cutoffs?year=${DATA_YEAR}&include_invalid=1&limit=500`);
-  if (!response.ok) throw new Error(`Admission data request failed: ${response.status}`);
-  const payload = await response.json();
+  const [response, rankResponse] = await Promise.all([
+    fetch(`${STRATEGY_API_BASE}/api/cutoffs?year=${DATA_YEAR}&include_invalid=1&limit=500`),
+    fetch(`${STRATEGY_API_BASE}/api/rank-references?year=${DATA_YEAR}`)
+  ]);
+  if (!response.ok || !rankResponse.ok) throw new Error(`Admission data request failed: ${response.status}/${rankResponse.status}`);
+  const [payload, rankPayload] = await Promise.all([response.json(), rankResponse.json()]);
   if (!Array.isArray(payload.records)) throw new Error("Admission data response is invalid");
+  if (!Array.isArray(rankPayload.records)) throw new Error("Rank reference response is invalid");
   applyCutoffRecords(payload.records);
+  rankReferenceData = rankPayload.records;
 }
 
 async function init(){
@@ -2628,6 +2703,7 @@ async function init(){
   populateScoreDirectoryCategory();
   initEventHandlers();
   renderAll();
+  renderRankReference();
   renderScoreDirectoryStats();
   renderScoreDirectory();
   initVisitCounter();
