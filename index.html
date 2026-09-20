@@ -743,7 +743,7 @@ footer .fine{font-size:.78rem; color:#8B92C0;}
 .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);}
 </style>
 <link href="modern-ui.css?v=20260919" rel="stylesheet">
-<link href="analysis-dashboard.css?v=20260920a" rel="stylesheet">
+<link href="analysis-dashboard.css?v=20260920d" rel="stylesheet">
 </head>
 <body>
 
@@ -831,7 +831,7 @@ footer .fine{font-size:.78rem; color:#8B92C0;}
               <div class="rank-reference-head">
                 <div>
                   <h4 id="rankReferenceTitle">排名參考試算（選填）</h4>
-                  <p>依 115 年歷史招生人數推估的參考區間；不是正式錄取排名，也不保證錄取。</p>
+                  <p>僅限 115 年高雄區 21 所公立高中普通科；依歷史招生人數推估，非正式錄取排名或保證。</p>
                 </div>
                 <span>歷史推估</span>
               </div>
@@ -1014,22 +1014,50 @@ footer .fine{font-size:.78rem; color:#8B92C0;}
   </div>
 </main>
 
-<footer>
+<footer class="site-footer">
   <div class="wrap">
-    <h3>資料來源與使用說明</h3>
-    <ul>
-      <li>本系統使用115年高雄區高中職最低錄取分數參考資料作為歷史門檻參考。</li>
-      <li>116學年度實際招生名額、錄取標準及超額比序結果，應以主管機關正式公告為準。</li>
-      <li>本系統僅供學生進行升學方向與成績提升模擬，不代表實際錄取結果。</li>
-      <li>116學年度寫作測驗目前尚未列入本系統積點計算。</li>
-      <li>五專資料包含「優先免試積分」與「聯合免試總積分／總積點」，三者計算基礎不同，系統不會混合計算；「優先免試積分」不適用本系統的高中職五科門檻演算法，僅供參考，請以原始招生資訊為準。</li>
-      <li>部分欄位標示「無人選填」「-」「無開放」，代表無有效最低錄取門檻資料，已排除在門檻比對之外；標示為特殊格式者（如「18--10」）保留原始資料，未自行猜測其意義。</li>
-    </ul>
-    <p class="fine">本系統不會自動將你的成績上傳或同步至任何伺服器；五科等第與寫作級分僅儲存在你目前使用的瀏覽器（localStorage）。</p>
-    <p class="fine" style="margin-top:4px;opacity:.75;">© 2026 陽明國中 王高帆．保留所有權利．未經授權不得重製或改作。</p>
-    <p class="fine" id="visitCounter" style="margin-top:4px;opacity:.6;"></p>
+    <div class="footer-grid">
+      <section class="footer-brand" aria-label="系統資訊">
+        <div class="footer-brand-title"><img src="./ymjh.png" alt="陽明國中校徽">陽明國中</div>
+        <p>高雄區免試入學落點預測，協助學生與家長整理成績、認識歷史門檻並規劃志願方向。</p>
+      </section>
+      <section>
+        <h3>資料定位</h3>
+        <ul>
+          <li>採用115年高雄區歷史最低錄取資料。</li>
+          <li>僅供落點與志願規劃參考，不是錄取保證。</li>
+          <li>正式結果請以當年度官方公告為準。</li>
+        </ul>
+      </section>
+      <section>
+        <h3>使用原則</h3>
+        <ul>
+          <li>五科成績、志願與排名輸入僅保留在此瀏覽器。</li>
+          <li>排名參考試算僅適用115年高雄區21所公立高中普通科。</li>
+          <li>請同時考量興趣、交通、科別內容與招生名額。</li>
+        </ul>
+      </section>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-actions" aria-label="系統說明">
+        <button type="button" class="footer-link" id="openWelcomeBtn">系統導覽</button>
+        <button type="button" class="footer-link" id="openDisclaimerBtn">免責說明</button>
+        <button type="button" class="footer-link" id="openPrivacyBtn">隱私說明</button>
+      </div>
+      <div class="footer-meta">
+        <span>© 2026 陽明國中 王高帆</span>
+        <span id="visitCounter" aria-live="polite"></span>
+      </div>
+    </div>
   </div>
 </footer>
+
+<div class="app-modal-overlay" id="appModalOverlay" hidden>
+  <section class="app-modal" id="appModal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+    <button type="button" class="app-modal-close" id="appModalClose" aria-label="關閉視窗">×</button>
+    <div id="appModalContent"></div>
+  </section>
+</div>
 
 <script>
 /* =========================
@@ -1935,15 +1963,18 @@ function getSelectedRankReference(){
 
 function renderRankReference(){
   const result = el("rankReferenceResult");
+  const box = el("rankReferenceBox");
   ["general","male","female"].forEach(type => {
     const input = el(`${type}Rank`);
     if (input) input.value = rankInputs[type] || "";
   });
   const reference = getSelectedRankReference();
   if (!reference) {
-    result.innerHTML = '<span class="rank-neutral">選擇具排名參考資料的公立高中後，會顯示適用的試算序位與歷史區間。</span>';
+    box.classList.add("is-unavailable");
+    result.innerHTML = '<span class="rank-neutral">此校系不在「115 年高雄區 21 所公立高中普通科」排名參考試算範圍內，因此不提供試算序位。</span>';
     return;
   }
+  box.classList.remove("is-unavailable");
   const labels = { general:"全體試算序位", male:"區男試算排名", female:"區女試算排名" };
   const rank = Number.parseInt(rankInputs[reference.rankingType], 10);
   const range = `${reference.rankStart}–${reference.rankEnd} 名`;
@@ -1956,8 +1987,17 @@ function renderRankReference(){
     result.innerHTML = `<span class="rank-warning"><b>接近 714 名歷史人數提醒</b>：${base} 你輸入的序位為 <b>${rank} 名</b>，位於 ${reference.warningStart}–${reference.warningEnd} 名注意區間；實際結果仍受當年招生名額、志願序與超額比序影響。</span>`;
     return;
   }
-  const position = rank >= reference.rankStart && rank <= reference.rankEnd ? "位於" : "不在";
-  result.innerHTML = `<span class="rank-neutral">${base} 你輸入的序位為 <b>${rank} 名</b>，${position}此歷史推估區間。此資訊僅供參考，非錄取保證。</span>`;
+  if (rank < reference.rankStart) {
+    const lead = reference.rankStart - rank;
+    result.innerHTML = `<span class="rank-ahead">${base} 你輸入的序位為 <b>${rank} 名</b>，較此歷史推估區間前 <b>${lead} 名</b>；以序位比較而言，明顯優於 115 年的歷史招生人數推估位置，具有較大安全餘裕。實際結果仍受當年招生名額、志願序與超額比序影響。</span>`;
+    return;
+  }
+  if (rank > reference.rankEnd) {
+    const behind = rank - reference.rankEnd;
+    result.innerHTML = `<span class="rank-behind">${base} 你輸入的序位為 <b>${rank} 名</b>，較此歷史推估區間後 <b>${behind} 名</b>；以序位比較而言，仍有挑戰，建議同步準備較保險的志願選項。此資訊僅供參考，非錄取保證。</span>`;
+    return;
+  }
+  result.innerHTML = `<span class="rank-neutral">${base} 你輸入的序位為 <b>${rank} 名</b>，落在此歷史推估區間內。此資訊僅供參考，非錄取保證。</span>`;
 }
 
 function renderTargetSchoolSelector(){
@@ -2561,6 +2601,95 @@ function renderAll(){
 /* =========================
    EVENT HANDLERS
 ========================= */
+const WELCOME_STORAGE_KEY = "kh116_welcomed_v2";
+let activeModalKind = null;
+let modalTrigger = null;
+
+function openAppModal(kind, html, trigger){
+  const overlay = el("appModalOverlay");
+  modalTrigger = trigger || document.activeElement;
+  activeModalKind = kind;
+  el("appModalContent").innerHTML = html;
+  overlay.hidden = false;
+  document.body.classList.add("modal-open");
+  el("appModalClose").focus();
+}
+
+function closeAppModal(){
+  if (activeModalKind === "welcome") {
+    try { localStorage.setItem(WELCOME_STORAGE_KEY, "1"); } catch (error) { /* ignore unavailable storage */ }
+  }
+  el("appModalOverlay").hidden = true;
+  document.body.classList.remove("modal-open");
+  activeModalKind = null;
+  if (modalTrigger && typeof modalTrigger.focus === "function") modalTrigger.focus();
+}
+
+function openWelcomeModal(trigger){
+  openAppModal("welcome", `
+    <div class="welcome-modal">
+      <p class="modal-eyebrow">陽明國中・高雄區免試入學</p>
+      <h2 id="appModalTitle">👋 歡迎使用</h2>
+      <p>這個系統會將五科等第換算為總積分與總積點，對照115年歷史最低錄取資料，協助你認識目前的落點位置與努力方向。</p>
+      <ol class="welcome-steps">
+        <li><span>1</span><div><b>選擇性別</b><small>系統會排除不符合資格的校系。</small></div></li>
+        <li><span>2</span><div><b>輸入五科等第與寫作級分</b><small>每次選擇都會即時計算與更新。</small></div></li>
+        <li><span>3</span><div><b>選擇想挑戰的志願</b><small>查看歷史門檻、落點分析與提升建議。</small></div></li>
+        <li><span>4</span><div><b>瀏覽完整資料與志願策略</b><small>將興趣、交通與招生名額一起納入考量。</small></div></li>
+      </ol>
+      <p class="modal-notice">本系統僅供參考，並非116學年度正式錄取結果。你的成績與輸入資料只會留在目前使用的瀏覽器。</p>
+      <button type="button" class="modal-primary" id="welcomeStartBtn">開始使用</button>
+    </div>`, trigger);
+  el("welcomeStartBtn").addEventListener("click", closeAppModal);
+}
+
+function openDisclaimerModal(trigger){
+  openAppModal("disclaimer", `
+    <div class="info-modal">
+      <p class="modal-eyebrow">使用前請留意</p>
+      <h2 id="appModalTitle">免責與資料說明</h2>
+      <ul>
+        <li>最低錄取資料為115年高雄區歷史資料，並非116學年度的正式錄取預測。</li>
+        <li>實際結果仍會受到招生名額、志願序、超額比序及當年度考生成績分布影響。</li>
+        <li>五專優先免試與聯合免試的計算基礎不同，系統不會將它們與高中職五科門檻混合比較。</li>
+        <li>「無人選填」、「-」與「無開放」等資料不會被當成有效門檻；特殊格式保留原始值，不自行推測。</li>
+      </ul>
+      <p class="modal-notice">請以當年度招生簡章及主管機關正式公告為準。</p>
+    </div>`, trigger);
+}
+
+function openPrivacyModal(trigger){
+  openAppModal("privacy", `
+    <div class="info-modal">
+      <p class="modal-eyebrow">資料與隱私</p>
+      <h2 id="appModalTitle">你的資料如何使用</h2>
+      <ul>
+        <li>五科等第、寫作級分、志願、能力設定與排名參考輸入，僅儲存在目前裝置的瀏覽器 localStorage。</li>
+        <li>系統會向 Cloudflare Worker 讀取公開的校系門檻與排名參考資料；不會把你的個人成績寫入資料庫。</li>
+        <li>造訪次數僅以整體數字統計，不用來辨識個人身分或追蹤瀏覽行為。</li>
+      </ul>
+      <p class="modal-notice">你可使用「重新輸入」或「清除資料」移除本瀏覽器儲存的成績資料。</p>
+    </div>`, trigger);
+}
+
+function initModalInfrastructure(){
+  el("appModalClose").addEventListener("click", closeAppModal);
+  el("appModalOverlay").addEventListener("click", event => {
+    if (event.target === el("appModalOverlay")) closeAppModal();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !el("appModalOverlay").hidden) closeAppModal();
+  });
+}
+
+function maybeShowWelcomeModal(){
+  try {
+    if (localStorage.getItem(WELCOME_STORAGE_KEY) !== "1") openWelcomeModal();
+  } catch (error) {
+    openWelcomeModal();
+  }
+}
+
 function initEventHandlers(){
   document.querySelectorAll("#genderSelector input[name='gender']").forEach(input=>{
     input.addEventListener("change", ()=>{
@@ -2621,6 +2750,10 @@ function initEventHandlers(){
       renderSchoolResults();
     });
   }
+
+  el("openWelcomeBtn").addEventListener("click", event => openWelcomeModal(event.currentTarget));
+  el("openDisclaimerBtn").addEventListener("click", event => openDisclaimerModal(event.currentTarget));
+  el("openPrivacyBtn").addEventListener("click", event => openPrivacyModal(event.currentTarget));
 }
 
 function populateScoreDirectoryCategory(){
@@ -2701,12 +2834,14 @@ async function init(){
   loadSubjects();
   populateCategoryFilter();
   populateScoreDirectoryCategory();
+  initModalInfrastructure();
   initEventHandlers();
   renderAll();
   renderRankReference();
   renderScoreDirectoryStats();
   renderScoreDirectory();
   initVisitCounter();
+  maybeShowWelcomeModal();
 }
 document.addEventListener("DOMContentLoaded", init);
 </script>
