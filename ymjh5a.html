@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高雄市陽明國中 115學年度 學習成就評量 (5A) 歷次模擬考追蹤系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .table-container {
+            max-height: 550px;
+            overflow-y: auto;
+        }
+        .sticky-th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
+
+    <!-- Header -->
+    <header class="bg-indigo-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-1">
+                        <i class="fa-solid fa-school font-bold"></i> 高雄市立陽明國民中學
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3">
+                        <span>115 學年度 5A 學習成就評量追蹤與比較系統</span>
+                    </h1>
+                </div>
+
+                <!-- Exam Switcher & Tool Actions -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- Exam Selection Dropdown -->
+                    <div class="bg-indigo-800/80 p-1 rounded-xl flex items-center border border-indigo-700/60 shadow-inner">
+                        <span class="text-xs text-indigo-200 px-2 font-medium"><i class="fa-solid fa-bookmark mr-1"></i>當前考次:</span>
+                        <select id="examSelector" onchange="switchExam(this.value)" class="bg-indigo-950 text-white text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 border border-indigo-600">
+                            <!-- Options generated dynamically -->
+                        </select>
+                    </div>
+
+                    <button onclick="openImportModal()" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-sm transition shadow-sm">
+                        <i class="fa-solid fa-file-import"></i> 匯入新考次
+                    </button>
+
+                    <button onclick="toggleComparisonView()" id="btnToggleCompare" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-medium px-3.5 py-2 rounded-xl text-sm transition shadow-sm">
+                        <i class="fa-solid fa-chart-line"></i> 跨考次比較
+                    </button>
+
+                    <button onclick="exportCSV()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> 匯出 CSV
+                    </button>
+
+                    <button onclick="openAddModal()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-plus"></i> 新增學生
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+
+        <!-- Active Exam Summary Banner -->
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </span>
+                <div>
+                    <h2 class="text-lg font-bold text-indigo-950" id="activeExamTitle">第 1 次學習成就評量 (5A 榜單)</h2>
+                    <p class="text-xs text-indigo-700" id="activeExamSubtitle">已載入學生資料與積點明細</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500">快速範例考次載入：</span>
+                <button onclick="loadSampleExam2()" class="text-xs bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-300 font-semibold px-2.5 py-1 rounded-lg transition">
+                    + 載入第2次模擬考 (範例)
+                </button>
+                <button onclick="loadSampleExam3()" class="text-xs bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-300 font-semibold px-2.5 py-1 rounded-lg transition">
+                    + 載入第3次模擬考 (範例)
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Total Students Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">當前考次 5A 人數</p>
+                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-total-count">0 <span class="text-sm font-normal text-slate-500">人</span></h3>
+                    <p class="text-xs text-indigo-600 font-medium mt-1" id="kpi-diff-count">較前次: --</p>
+                </div>
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+            </div>
+
+            <!-- Avg Total Credits Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">平均總積點</p>
+                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-avg-credits">0 <span class="text-sm font-normal text-slate-500">點</span></h3>
+                    <p class="text-xs text-emerald-600 font-medium mt-1" id="kpi-diff-credits">較前次: --</p>
+                </div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+
+            <!-- Essay 6 Level Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">作文 6 級分人數</p>
+                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-essay-6">0 <span class="text-sm font-normal text-slate-500">人</span></h3>
+                    <p class="text-xs text-amber-600 font-medium mt-1" id="kpi-essay-6-pct">佔比 0%</p>
+                </div>
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-pen-nib"></i>
+                </div>
+            </div>
+
+            <!-- Top Class Card -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">5A 人數最多班級</p>
+                    <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-top-class">-- <span class="text-sm font-normal text-slate-500">班</span></h3>
+                    <p class="text-xs text-purple-600 font-medium mt-1" id="kpi-top-class-count">0 人進榜</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-Exam Comparison Dashboard Section (Collapsible / Toggleable) -->
+        <div id="comparisonSection" class="bg-white rounded-2xl border border-purple-200 shadow-md p-6 mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-slate-100 gap-3">
+                <div>
+                    <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-purple-600"></i> 歷次模擬考跨考次比較與趨勢分析
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">跨考次觀察 5A 榜單總人數變化、平均積點增長與作文高分表現</p>
+                </div>
+                <span class="text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1 rounded-full w-max" id="examCountBadge">已載入 1 次模擬考數據</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Trend Line Chart for 5A Count and Avg Credits -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-trend-up text-indigo-600"></i> 5A 人數與平均積點歷次演變
+                    </h3>
+                    <div class="h-60 relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Essay Distribution Trend -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-emerald-600"></i> 歷次作文級分人數分佈比較
+                    </h3>
+                    <div class="h-60 relative">
+                        <canvas id="essayCompareChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Progress Table (Individual comparisons across exams) -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                <div class="px-4 py-3 bg-slate-100/80 border-b border-slate-200 flex justify-between items-center">
+                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-user-check text-indigo-600"></i> 學生歷次跨考次成績表現比較表
+                    </h4>
+                    <span class="text-xs text-slate-500">以學生姓名/編號比對歷次進退步點數</span>
+                </div>
+                <div class="max-h-64 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <th class="py-2.5 px-3">編號</th>
+                                <th class="py-2.5 px-3">班級</th>
+                                <th class="py-2.5 px-3">姓名</th>
+                                <th class="py-2.5 px-3 text-center" id="colHeaderExamPrevious">上次積點</th>
+                                <th class="py-2.5 px-3 text-center" id="colHeaderExamCurrent">本次積點</th>
+                                <th class="py-2.5 px-3 text-center">積點變化 (Δ)</th>
+                                <th class="py-2.5 px-3 text-center">作文級分變化</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentProgressTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Single Exam Visual Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Essay Score Chart -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+                <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-600"></i> <span id="labelEssayChart">當前考次作文級分分佈</span>
+                </h2>
+                <div class="h-56 relative">
+                    <canvas id="essayChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Class Top Count Chart -->
+            <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm lg:col-span-2">
+                <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-emerald-600"></i> 各班 5A 人數統計 (前12高班級)
+                </h2>
+                <div class="h-56 relative">
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search, Filter & Spreadsheet Controls -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 p-4">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                <!-- Search Bar -->
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="搜尋姓名、班級或編號..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                </div>
+
+                <!-- Filters Group -->
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Class Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="classFilter" class="text-xs font-semibold text-slate-600">班級:</label>
+                        <select id="classFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部班級</option>
+                        </select>
+                    </div>
+
+                    <!-- Essay Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="essayFilter" class="text-xs font-semibold text-slate-600">作文級分:</label>
+                        <select id="essayFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部級分</option>
+                            <option value="6">6 級分</option>
+                            <option value="5">5 級分</option>
+                            <option value="4">4 級分</option>
+                            <option value="3">3 級分</option>
+                            <option value="2">2 級分</option>
+                        </select>
+                    </div>
+
+                    <!-- Credits Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="creditsFilter" class="text-xs font-semibold text-slate-600">總積點:</label>
+                        <select id="creditsFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部積點</option>
+                            <option value="35">35 點 (滿點)</option>
+                            <option value="34">34 點</option>
+                            <option value="33">33 點</option>
+                            <option value="32">32 點</option>
+                            <option value="31">31 點</option>
+                            <option value="30">30 點</option>
+                            <option value="29-less">29點以下</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset Filters Button -->
+                    <button onclick="resetFilters()" class="text-slate-500 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-arrows-rotate"></i> 重置篩選
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spreadsheet Data Table Card -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+            <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-table text-indigo-600"></i>
+                    <h2 class="text-base font-bold text-slate-800" id="tableHeaderTitle">5A 學生成績明細試算表</h2>
+                    <span id="recordCountBadge" class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">138 筆資料</span>
+                </div>
+                <p class="text-xs text-slate-500 hidden sm:block">點擊欄位標題可進行排序</p>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider sticky-th border-b border-slate-200">
+                            <th onclick="sortTable('id')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                編號 <span id="sort-icon-id" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('classNum')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                班級 <span id="sort-icon-classNum" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('name')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                姓名 <span id="sort-icon-name" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('score')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                總積分 <span id="sort-icon-score" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('credits')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                總積點 <span id="sort-icon-credits" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('essay')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                作文級分 <span id="sort-icon-essay" class="text-slate-400">↕</span>
+                            </th>
+                            <th class="py-3.5 px-4 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Rows rendered via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
+                <span>備註：此系統支援多次模擬考成效追蹤與比較。</span>
+                <span>陽明國中教務處評量統計</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Import Mock Exam Modal -->
+    <div id="importModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl mx-4 overflow-hidden">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-file-import text-amber-400"></i> 匯入後續模擬考資料
+                </h3>
+                <button onclick="closeImportModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">×</button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <!-- Exam Name Input -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">模擬考名稱 / 考次標題</label>
+                    <input type="text" id="inputExamTitle" placeholder="例如: 第 2 次學習成就評量 (5A)" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                </div>
+
+                <!-- Input Methods Tab -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">資料匯入方式</label>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <button type="button" onclick="switchImportTab('csv')" id="tabBtnCsv" class="py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i> CSV 檔案上傳
+                        </button>
+                        <button type="button" onclick="switchImportTab('text')" id="tabBtnText" class="py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paste"></i> 貼上文本 / Excel
+                        </button>
+                    </div>
+
+                    <!-- File Upload Input Area -->
+                    <div id="areaImportCsv" class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-indigo-400 bg-slate-50 transition">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-500 mb-2"></i>
+                        <p class="text-sm font-semibold text-slate-700">點擊選擇 CSV 檔案 或 拖曳檔案至此</p>
+                        <p class="text-xs text-slate-400 mt-1">格式需求：編號, 班級, 姓名, 總積分, 總積點, 作文級分</p>
+                        <input type="file" id="csvFileInput" accept=".csv" onchange="handleFileSelect(event)" class="mt-3 text-xs text-slate-500 mx-auto block">
+                    </div>
+
+                    <!-- Textarea Area -->
+                    <div id="areaImportText" class="hidden">
+                        <textarea id="pasteTextArea" rows="6" placeholder="請將 Excel 或 CSV 內容貼於此處：&#10;編號,班級,姓名,總積分,總積點,作文級分&#10;1,301,陳芳禹,30,35,6&#10;2,309,彭昱笙,30,35,5" class="w-full p-3 border border-slate-300 rounded-xl text-xs font-mono outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-600 mt-0.5"></i>
+                    <span>提示：學生姓名與班級相同的資料將會自動進行歷次跨考次比對分析，方便檢視個人成長！</span>
+                </div>
+
+                <div class="flex justify-between items-center pt-3 border-t border-slate-100">
+                    <button type="button" onclick="loadSampleExamData()" class="text-xs text-indigo-700 font-semibold hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 載入測試範例數據 (第2次模擬考)
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                        <button type="button" onclick="processImportData()" class="px-5 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-bold rounded-lg text-sm shadow-md transition">
+                            確認匯入並分析
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Student Modal -->
+    <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 id="modalTitle" class="font-bold text-lg">新增學生成績</h3>
+                <button onclick="closeModal()" class="text-indigo-200 hover:text-white text-xl">×</button>
+            </div>
+            <form id="studentForm" onsubmit="saveStudent(event)" class="p-6 space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">編號</label>
+                    <input type="number" id="inputID" required min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">班級 (例如: 301)</label>
+                    <input type="text" id="inputClass" required placeholder="301" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">姓名</label>
+                    <input type="text" id="inputName" required placeholder="張小明" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">總積分</label>
+                        <input type="number" id="inputScore" value="30" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-lg text-sm text-slate-600 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">總積點 (0-35)</label>
+                        <input type="number" id="inputCredits" required min="0" max="35" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">作文級分 (0-6)</label>
+                        <input type="number" id="inputEssay" required min="0" max="6" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow-sm">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">操作成功</span>
+    </div>
+
+    <script>
+        // Full raw dataset parsed from the PDF document (Exam 1 - 138 students)
+        const initialDataExam1 = [
+            [1, "301", "陳芳禹", 30, 35, 6],
+            [2, "309", "彭昱笙", 30, 35, 5],
+            [3, "314", "田道生", 30, 35, 5],
+            [4, "323", "黃棕宥", 30, 35, 5],
+            [5, "304", "李承蓁", 30, 35, 5],
+            [6, "309", "丁政元", 30, 35, 5],
+            [7, "311", "翁紹凱", 30, 35, 4],
+            [8, "307", "黃品堯", 30, 35, 4],
+            [9, "317", "李威", 30, 34, 6],
+            [10, "329", "許昊揚", 30, 34, 4],
+            [11, "302", "馬友倫", 30, 34, 4],
+            [12, "308", "吳奎", 30, 34, 4],
+            [13, "325", "葉桂圖", 30, 34, 3],
+            [14, "327", "徐浩亭", 30, 34, 2],
+            [15, "325", "鐘文岑", 30, 34, 6],
+            [16, "333", "李芸", 30, 34, 6],
+            [17, "316", "楊鎧澤", 30, 34, 5],
+            [18, "301", "葉憶如", 30, 34, 3],
+            [19, "304", "黃傑熙", 30, 34, 5],
+            [20, "312", "黃羽湘", 30, 34, 4],
+            [21, "326", "洪德芮", 30, 34, 4],
+            [22, "328", "陳沛晞", 30, 34, 4],
+            [23, "307", "林暄潔", 30, 33, 6],
+            [24, "313", "莊子", 30, 33, 4],
+            [25, "328", "梁書偉", 30, 33, 3],
+            [26, "313", "楊詠淇", 30, 33, 5],
+            [27, "322", "王又申", 30, 33, 6],
+            [28, "329", "羅子恩", 30, 33, 5],
+            [29, "318", "蔡有朋", 30, 33, 4],
+            [30, "303", "田定宇", 30, 33, 3],
+            [31, "301", "劉子齊", 30, 33, 5],
+            [32, "331", "楊雨潔", 30, 33, 4],
+            [33, "314", "蔡侑", 30, 33, 5],
+            [34, "333", "吳沛芫", 30, 33, 6],
+            [35, "323", "陳家喆", 30, 33, 2],
+            [36, "315", "蕭鈺澄", 30, 33, 6],
+            [37, "305", "洪聖晴", 30, 33, 6],
+            [38, "320", "陳彥龍", 30, 33, 5],
+            [39, "332", "許晁瑞", 30, 33, 3],
+            [40, "302", "黃詠", 30, 33, 6],
+            [41, "328", "鄭羽晴", 30, 33, 4],
+            [42, "308", "吳勉辰", 30, 33, 3],
+            [43, "319", "林子淮", 30, 33, 5],
+            [44, "315", "黃蘊菲", 30, 33, 5],
+            [45, "325", "鄒承翰", 30, 33, 4],
+            [46, "312", "邱秉澤", 30, 33, 5],
+            [47, "327", "鍾明紘", 30, 33, 5],
+            [48, "319", "楊忻巧", 30, 33, 3],
+            [49, "323", "賴宥蓁", 30, 32, 3],
+            [50, "304", "周以", 30, 32, 5],
+            [51, "330", "李欣庭", 30, 32, 4],
+            [52, "313", "黃義埕", 30, 32, 6],
+            [53, "322", "蔡沛璇", 30, 32, 5],
+            [54, "311", "張月馨", 30, 32, 3],
+            [55, "310", "劉韋樂", 30, 32, 5],
+            [56, "322", "王山詣", 30, 32, 4],
+            [57, "332", "楊宜旻", 30, 32, 4],
+            [58, "330", "丁楷航", 30, 32, 3],
+            [59, "305", "廖菘富", 30, 32, 4],
+            [60, "317", "楊明臻", 30, 32, 6],
+            [61, "321", "曾瀚霆", 30, 32, 5],
+            [62, "327", "許恩瑜", 30, 32, 5],
+            [63, "307", "灝辰", 30, 32, 2],
+            [64, "333", "周宥翔", 30, 32, 4],
+            [65, "314", "朱沁羚", 30, 32, 4],
+            [66, "312", "蔡夏恩", 30, 32, 4],
+            [67, "305", "黃子彰", 30, 32, 4],
+            [68, "333", "巫品萱", 30, 31, 4],
+            [69, "326", "楊沅", 30, 31, 4],
+            [70, "327", "葉芯妤", 30, 31, 4],
+            [71, "319", "洪煒翔", 30, 31, 3],
+            [72, "306", "許致愷", 30, 31, 5],
+            [73, "331", "謝之綺", 30, 31, 3],
+            [74, "316", "林珊妤", 30, 31, 6],
+            [75, "310", "王暄晴", 30, 31, 6],
+            [76, "312", "李星霓", 30, 31, 4],
+            [77, "308", "許裕", 30, 31, 4],
+            [78, "309", "田芸嘉", 30, 31, 4],
+            [79, "313", "廖書穎", 30, 31, 5],
+            [80, "309", "莊銘", 30, 31, 5],
+            [81, "307", "蔡詠晴", 30, 31, 5],
+            [82, "301", "鄭學聖", 30, 31, 4],
+            [83, "306", "李沛", 30, 31, 5],
+            [84, "322", "吳柏裕", 30, 31, 5],
+            [85, "306", "許婕琪", 30, 31, 5],
+            [86, "333", "許羽晴", 30, 31, 4],
+            [87, "327", "黃鈞", 30, 31, 4],
+            [88, "326", "黃柏達", 30, 31, 4],
+            [89, "316", "馬晟祐", 30, 31, 3],
+            [90, "307", "黃翊甄", 30, 31, 4],
+            [91, "330", "盧岑芳", 30, 31, 4],
+            [92, "332", "劉彥", 30, 31, 3],
+            [93, "301", "史哲銓", 30, 31, 5],
+            [94, "315", "顏崇鈞", 30, 31, 5],
+            [95, "327", "蔡泊", 30, 30, 3],
+            [96, "314", "韓明揚", 30, 30, 4],
+            [97, "332", "王于", 30, 30, 4],
+            [98, "318", "王亭", 30, 30, 4],
+            [99, "316", "黃柏翰", 30, 30, 4],
+            [100, "330", "陳柏樂", 30, 30, 3],
+            [101, "318", "黃晨恩", 30, 30, 5],
+            [102, "311", "簡嘉吟", 30, 30, 4],
+            [103, "301", "陳梓晴", 30, 30, 5],
+            [104, "328", "黃沛青", 30, 30, 5],
+            [105, "325", "莊維庭", 30, 30, 3],
+            [106, "328", "李昀蓁", 30, 30, 4],
+            [107, "306", "羅千詠", 30, 30, 3],
+            [108, "308", "陳亮妤", 30, 30, 3],
+            [109, "322", "趙俊維", 30, 29, 6],
+            [110, "309", "潘蕙琳", 30, 29, 6],
+            [111, "322", "鄭榆", 30, 29, 4],
+            [112, "304", "許育碩", 30, 29, 4],
+            [113, "304", "簡 蓁", 30, 29, 6],
+            [114, "322", "蘇祐", 30, 29, 2],
+            [115, "328", "陳朝竣", 30, 29, 3],
+            [116, "320", "謝詠任", 30, 29, 3],
+            [117, "325", "謝承學", 30, 29, 4],
+            [118, "320", "盧家", 30, 29, 4],
+            [119, "319", "江晨", 30, 29, 6],
+            [120, "326", "陳易為", 30, 29, 4],
+            [121, "311", "朱祐均", 30, 29, 4],
+            [122, "305", "許峻嘉", 30, 28, 6],
+            [123, "324", "周昱君", 30, 28, 5],
+            [124, "319", "蘇子滕", 30, 28, 4],
+            [125, "303", "錢子翎", 30, 28, 3],
+            [126, "302", "莊子毅", 30, 28, 5],
+            [127, "327", "李承熹", 30, 28, 2],
+            [128, "308", "陳彥霆", 30, 28, 5],
+            [129, "322", "劉奕奇", 30, 28, 4],
+            [130, "326", "李辰錯", 30, 27, 3],
+            [131, "315", "胡洧", 30, 27, 3],
+            [132, "310", "歐書祐", 30, 27, 4],
+            [133, "301", "魏子恆", 30, 27, 4],
+            [134, "319", "陳品妤", 30, 27, 3],
+            [135, "330", "莊子賢", 30, 27, 4],
+            [136, "324", "陳沚", 30, 27, 3],
+            [137, "320", "王語棠", 30, 26, 4],
+            [138, "333", "王冠凱", 30, 26, 4]
+        ];
+
+        // Format to array of student objects
+        function parseRawToObjects(arr) {
+            return arr.map(item => ({
+                id: item[0],
+                classNum: item[1].toString(),
+                name: item[2],
+                score: item[3],
+                credits: item[4],
+                essay: item[5]
+            }));
+        }
+
+        // Global State for Mock Exams
+        let exams = [
+            {
+                id: "exam_1",
+                title: "第 1 次學習成就評量 (5A)",
+                date: "2026-09",
+                students: parseRawToObjects(initialDataExam1)
+            }
+        ];
+
+        let currentExamId = "exam_1";
+        let filteredStudents = [];
+        let currentSortColumn = 'id';
+        let currentSortAsc = true;
+        let isShowComparison = true;
+
+        // Chart instances
+        let essayChartInstance = null;
+        let classChartInstance = null;
+        let trendChartInstance = null;
+        let essayCompareChartInstance = null;
+
+        // On DOM Loaded
+        window.onload = function() {
+            renderExamSelector();
+            updateActiveExamData();
+            initCharts();
+            renderComparisonDashboard();
+        };
+
+        // Render Exam Selector Options
+        function renderExamSelector() {
+            const selector = document.getElementById('examSelector');
+            selector.innerHTML = '';
+            exams.forEach((ex) => {
+                const opt = document.createElement('option');
+                opt.value = ex.id;
+                opt.textContent = ex.title;
+                if (ex.id === currentExamId) opt.selected = true;
+                selector.appendChild(opt);
+            });
+
+            document.getElementById('examCountBadge').textContent = `已載入 ${exams.length} 次模擬考數據`;
+        }
+
+        // Switch Active Exam View
+        function switchExam(examId) {
+            currentExamId = examId;
+            updateActiveExamData();
+        }
+
+        function getCurrentExam() {
+            return exams.find(e => e.id === currentExamId) || exams[0];
+        }
+
+        function updateActiveExamData() {
+            const activeExam = getCurrentExam();
+            document.getElementById('activeExamTitle').textContent = activeExam.title;
+            document.getElementById('activeExamSubtitle').textContent = `共 ${activeExam.students.length} 名學生進入 5A 榜單`;
+            document.getElementById('labelEssayChart').textContent = `${activeExam.title} - 作文級分分佈`;
+            document.getElementById('tableHeaderTitle').textContent = `${activeExam.title} 成績明細表`;
+
+            populateClassFilterOptions();
+            applyFilters();
+            renderComparisonDashboard();
+        }
+
+        // Populate Class Filter Dropdown
+        function populateClassFilterOptions() {
+            const activeExam = getCurrentExam();
+            const classes = [...new Set(activeExam.students.map(s => s.classNum))].sort();
+            const classFilter = document.getElementById('classFilter');
+            const currentSelected = classFilter.value || 'ALL';
+            
+            classFilter.innerHTML = '<option value="ALL">全部班級</option>';
+            classes.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = `${c} 班`;
+                classFilter.appendChild(opt);
+            });
+
+            if (classes.includes(currentSelected)) {
+                classFilter.value = currentSelected;
+            } else {
+                classFilter.value = 'ALL';
+            }
+        }
+
+        // Apply Search and Filters for Active Exam
+        function applyFilters() {
+            const activeExam = getCurrentExam();
+            const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
+            const selectedClass = document.getElementById('classFilter').value;
+            const selectedEssay = document.getElementById('essayFilter').value;
+            const selectedCredits = document.getElementById('creditsFilter').value;
+
+            filteredStudents = activeExam.students.filter(s => {
+                const matchSearch = s.name.toLowerCase().includes(searchText) || 
+                                    s.classNum.includes(searchText) || 
+                                    s.id.toString().includes(searchText);
+                
+                const matchClass = (selectedClass === 'ALL' || s.classNum === selectedClass);
+                const matchEssay = (selectedEssay === 'ALL' || s.essay.toString() === selectedEssay);
+
+                let matchCredits = true;
+                if (selectedCredits !== 'ALL') {
+                    if (selectedCredits === '29-less') {
+                        matchCredits = s.credits <= 29;
+                    } else {
+                        matchCredits = s.credits === parseInt(selectedCredits);
+                    }
+                }
+
+                return matchSearch && matchClass && matchEssay && matchCredits;
+            });
+
+            sortData(currentSortColumn, false);
+            renderTable();
+            updateKPIs();
+            updateSingleExamCharts();
+        }
+
+        // Reset Filters
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('classFilter').value = 'ALL';
+            document.getElementById('essayFilter').value = 'ALL';
+            document.getElementById('creditsFilter').value = 'ALL';
+            applyFilters();
+        }
+
+        // Sort Data
+        function sortTable(column) {
+            if (currentSortColumn === column) {
+                currentSortAsc = !currentSortAsc;
+            } else {
+                currentSortColumn = column;
+                currentSortAsc = true;
+            }
+            sortData(column, true);
+        }
+
+        function sortData(column, isUserClick = false) {
+            filteredStudents.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+
+                if (typeof valA === 'string') {
+                    return currentSortAsc ? valA.localeCompare(valB, 'zh-TW') : valB.localeCompare(valA, 'zh-TW');
+                } else {
+                    return currentSortAsc ? valA - valB : valB - valA;
+                }
+            });
+
+            ['id', 'classNum', 'name', 'score', 'credits', 'essay'].forEach(col => {
+                const iconSpan = document.getElementById(`sort-icon-${col}`);
+                if (iconSpan) {
+                    if (col === column) {
+                        iconSpan.textContent = currentSortAsc ? '▲' : '▼';
+                        iconSpan.className = 'text-indigo-600 font-bold';
+                    } else {
+                        iconSpan.textContent = '↕';
+                        iconSpan.className = 'text-slate-400';
+                    }
+                }
+            });
+
+            if (isUserClick) {
+                renderTable();
+            }
+        }
+
+        // Render Table Rows
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const badge = document.getElementById('recordCountBadge');
+            badge.textContent = `${filteredStudents.length} 筆資料`;
+
+            if (filteredStudents.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-slate-400">
+                            <i class="fa-solid fa-folder-open text-4xl mb-2 block"></i>
+                            沒有符合條件的學生成績資料
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            filteredStudents.forEach((s) => {
+                let essayBadgeClass = 'bg-slate-100 text-slate-700';
+                if (s.essay === 6) essayBadgeClass = 'bg-amber-100 text-amber-800 font-bold border border-amber-300';
+                else if (s.essay === 5) essayBadgeClass = 'bg-blue-100 text-blue-800 font-semibold';
+                else if (s.essay === 4) essayBadgeClass = 'bg-emerald-100 text-emerald-800';
+
+                let creditsBadgeClass = 'text-slate-700';
+                if (s.credits === 35) creditsBadgeClass = 'text-purple-700 font-extrabold bg-purple-50 px-2 py-0.5 rounded';
+                else if (s.credits >= 33) creditsBadgeClass = 'text-indigo-700 font-bold';
+
+                html += `
+                    <tr class="hover:bg-indigo-50/50 transition border-b border-slate-100">
+                        <td class="py-3 px-4 font-mono text-slate-500">${s.id}</td>
+                        <td class="py-3 px-4 font-medium text-slate-900">${s.classNum} 班</td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${s.name}</td>
+                        <td class="py-3 px-4 text-center font-semibold text-indigo-900">${s.score}</td>
+                        <td class="py-3 px-4 text-center ${creditsBadgeClass}">${s.credits}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="inline-block px-2.5 py-1 rounded-full text-xs ${essayBadgeClass}">${s.essay} 級分</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openEditModal(${s.id})" title="編輯" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteStudent(${s.id})" title="刪除" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Update KPIs with comparisons
+        function updateKPIs() {
+            const count = filteredStudents.length;
+            document.getElementById('kpi-total-count').innerHTML = `${count} <span class="text-sm font-normal text-slate-500">人</span>`;
+
+            // Previous exam comparison
+            const currentIndex = exams.findIndex(e => e.id === currentExamId);
+            const prevExam = currentIndex > 0 ? exams[currentIndex - 1] : null;
+
+            if (prevExam) {
+                const prevCount = prevExam.students.length;
+                const diffCount = count - prevCount;
+                const signCount = diffCount >= 0 ? '+' : '';
+                const colorCount = diffCount >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                document.getElementById('kpi-diff-count').className = `text-xs font-semibold ${colorCount} mt-1`;
+                document.getElementById('kpi-diff-count').textContent = `較前次: ${signCount}${diffCount} 人`;
+            } else {
+                document.getElementById('kpi-diff-count').className = 'text-xs text-indigo-600 font-medium mt-1';
+                document.getElementById('kpi-diff-count').textContent = '達成 5A 榜單精英';
+            }
+
+            if (count === 0) {
+                document.getElementById('kpi-avg-credits').innerHTML = `0 <span class="text-sm font-normal text-slate-500">點</span>`;
+                document.getElementById('kpi-essay-6').innerHTML = `0 <span class="text-sm font-normal text-slate-500">人</span>`;
+                document.getElementById('kpi-essay-6-pct').textContent = `佔比 0%`;
+                document.getElementById('kpi-top-class').innerHTML = `-- <span class="text-sm font-normal text-slate-500">班</span>`;
+                document.getElementById('kpi-top-class-count').textContent = `0 人進榜`;
+                return;
+            }
+
+            // Avg Credits
+            const totalCreditsSum = filteredStudents.reduce((acc, s) => acc + s.credits, 0);
+            const avgCredits = (totalCreditsSum / count).toFixed(2);
+            document.getElementById('kpi-avg-credits').innerHTML = `${avgCredits} <span class="text-sm font-normal text-slate-500">點</span>`;
+
+            if (prevExam && prevExam.students.length > 0) {
+                const prevAvg = (prevExam.students.reduce((acc, s) => acc + s.credits, 0) / prevExam.students.length).toFixed(2);
+                const diffAvg = (avgCredits - prevAvg).toFixed(2);
+                const signAvg = diffAvg >= 0 ? '+' : '';
+                const colorAvg = diffAvg >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                document.getElementById('kpi-diff-credits').className = `text-xs font-semibold ${colorAvg} mt-1`;
+                document.getElementById('kpi-diff-credits').textContent = `較前次: ${signAvg}${diffAvg} 點`;
+            } else {
+                const maxCredits = Math.max(...filteredStudents.map(s => s.credits));
+                document.getElementById('kpi-diff-credits').className = 'text-xs text-emerald-600 font-medium mt-1';
+                document.getElementById('kpi-diff-credits').textContent = `最高: ${maxCredits} 點`;
+            }
+
+            // Essay 6 Count
+            const essay6Count = filteredStudents.filter(s => s.essay === 6).length;
+            const essay6Pct = ((essay6Count / count) * 100).toFixed(1);
+            document.getElementById('kpi-essay-6').innerHTML = `${essay6Count} <span class="text-sm font-normal text-slate-500">人</span>`;
+            document.getElementById('kpi-essay-6-pct').textContent = `佔比 ${essay6Pct}%`;
+
+            // Top Class
+            const classCounts = {};
+            filteredStudents.forEach(s => {
+                classCounts[s.classNum] = (classCounts[s.classNum] || 0) + 1;
+            });
+            let topClass = '--';
+            let topCount = 0;
+            for (const [cls, cnt] of Object.entries(classCounts)) {
+                if (cnt > topCount) {
+                    topCount = cnt;
+                    topClass = cls;
+                }
+            }
+            document.getElementById('kpi-top-class').innerHTML = `${topClass} <span class="text-sm font-normal text-slate-500">班</span>`;
+            document.getElementById('kpi-top-class-count').textContent = `${topCount} 人進榜`;
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            // Single Exam Essay Doughnut
+            const ctxEssay = document.getElementById('essayChart').getContext('2d');
+            essayChartInstance = new Chart(ctxEssay, {
+                type: 'doughnut',
+                data: {
+                    labels: ['6 級分', '5 級分', '4 級分', '3 級分', '2 級分'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    cutout: '65%'
+                }
+            });
+
+            // Single Exam Class Bar
+            const ctxClass = document.getElementById('classChart').getContext('2d');
+            classChartInstance = new Chart(ctxClass, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '5A 學生人數',
+                        data: [],
+                        backgroundColor: '#4f46e5',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Multi-Exam Trend Line Chart
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '5A 總人數 (人)',
+                            data: [],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '平均總積點 (點)',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            borderWidth: 3,
+                            borderDash: [5, 5],
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: '人數' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '積點' } }
+                    }
+                }
+            });
+
+            // Multi-Exam Essay Bar Chart
+            const ctxEssayCompare = document.getElementById('essayCompareChart').getContext('2d');
+            essayCompareChartInstance = new Chart(ctxEssayCompare, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: '6 級分', data: [], backgroundColor: '#f59e0b', borderRadius: 4 },
+                        { label: '5 級分', data: [], backgroundColor: '#3b82f6', borderRadius: 4 },
+                        { label: '4 級分', data: [], backgroundColor: '#10b981', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Update Charts for current exam
+        function updateSingleExamCharts() {
+            if (!essayChartInstance || !classChartInstance) return;
+
+            const essayCounts = [6, 5, 4, 3, 2].map(lvl => filteredStudents.filter(s => s.essay === lvl).length);
+            essayChartInstance.data.datasets[0].data = essayCounts;
+            essayChartInstance.update();
+
+            const classCountsMap = {};
+            filteredStudents.forEach(s => {
+                classCountsMap[s.classNum] = (classCountsMap[s.classNum] || 0) + 1;
+            });
+
+            const sortedClasses = Object.entries(classCountsMap)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12);
+
+            classChartInstance.data.labels = sortedClasses.map(c => `${c[0]}班`);
+            classChartInstance.data.datasets[0].data = sortedClasses.map(c => c[1]);
+            classChartInstance.update();
+        }
+
+        // Render Comparison Dashboard across exams
+        function renderComparisonDashboard() {
+            if (!trendChartInstance || !essayCompareChartInstance) return;
+
+            const examTitles = exams.map(e => e.title.replace('學習成就評量', '模考'));
+            const countData = exams.map(e => e.students.length);
+            const avgCreditsData = exams.map(e => {
+                if (e.students.length === 0) return 0;
+                return (e.students.reduce((sum, s) => sum + s.credits, 0) / e.students.length).toFixed(2);
+            });
+
+            // Update Trend Chart
+            trendChartInstance.data.labels = examTitles;
+            trendChartInstance.data.datasets[0].data = countData;
+            trendChartInstance.data.datasets[1].data = avgCreditsData;
+            trendChartInstance.update();
+
+            // Update Essay Comparison Stacked Chart
+            const essay6Data = exams.map(e => e.students.filter(s => s.essay === 6).length);
+            const essay5Data = exams.map(e => e.students.filter(s => s.essay === 5).length);
+            const essay4Data = exams.map(e => e.students.filter(s => s.essay === 4).length);
+
+            essayCompareChartInstance.data.labels = examTitles;
+            essayCompareChartInstance.data.datasets[0].data = essay6Data;
+            essayCompareChartInstance.data.datasets[1].data = essay5Data;
+            essayCompareChartInstance.data.datasets[2].data = essay4Data;
+            essayCompareChartInstance.update();
+
+            // Render Student Individual Progress Table
+            renderStudentProgressTable();
+        }
+
+        // Render Student Progress Table
+        function renderStudentProgressTable() {
+            const tbody = document.getElementById('studentProgressTableBody');
+            
+            if (exams.length < 2) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-400">
+                            <i class="fa-solid fa-circle-info text-2xl mb-1 block"></i>
+                            請匯入至少第 2 次模擬考資料以查看個案跨考次進退步比對
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const currentExam = getCurrentExam();
+            const currentIndex = exams.findIndex(e => e.id === currentExamId);
+            const previousExam = currentIndex > 0 ? exams[currentIndex - 1] : exams[0];
+
+            document.getElementById('colHeaderExamPrevious').textContent = `${previousExam.title.substring(0, 7)} 積點`;
+            document.getElementById('colHeaderExamCurrent').textContent = `${currentExam.title.substring(0, 7)} 積點`;
+
+            // Build dictionary of previous exam students for fast lookup (Key: Name + Class)
+            const prevMap = new Map();
+            previousExam.students.forEach(s => {
+                prevMap.set(`${s.name}_${s.classNum}`, s);
+            });
+
+            let html = '';
+            currentExam.students.forEach(s => {
+                const prevStudent = prevMap.get(`${s.name}_${s.classNum}`);
+                let prevCreditsText = '--';
+                let diffText = '首度進榜';
+                let diffClass = 'text-purple-600 bg-purple-50 font-semibold';
+                let essayDiffText = '--';
+
+                if (prevStudent) {
+                    prevCreditsText = `${prevStudent.credits} 點`;
+                    const diff = s.credits - prevStudent.credits;
+                    const sign = diff > 0 ? '+' : '';
+                    if (diff > 0) {
+                        diffText = `${sign}${diff} 點 (進步)`;
+                        diffClass = 'text-emerald-700 bg-emerald-50 font-bold';
+                    } else if (diff < 0) {
+                        diffText = `${diff} 點 (退步)`;
+                        diffClass = 'text-rose-700 bg-rose-50 font-bold';
+                    } else {
+                        diffText = `持平 (0)`;
+                        diffClass = 'text-slate-600 font-medium';
+                    }
+
+                    const essayDiff = s.essay - prevStudent.essay;
+                    if (essayDiff > 0) essayDiffText = `<span class="text-emerald-600 font-bold">+${essayDiff} 級分</span>`;
+                    else if (essayDiff < 0) essayDiffText = `<span class="text-rose-600 font-bold">${essayDiff} 級分</span>`;
+                    else essayDiffText = `<span class="text-slate-500">持平</span>`;
+                }
+
+                html += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100">
+                        <td class="py-2.5 px-3 font-mono">${s.id}</td>
+                        <td class="py-2.5 px-3 font-medium">${s.classNum} 班</td>
+                        <td class="py-2.5 px-3 font-semibold text-slate-900">${s.name}</td>
+                        <td class="py-2.5 px-3 text-center text-slate-500">${prevCreditsText}</td>
+                        <td class="py-2.5 px-3 text-center font-bold text-indigo-900">${s.credits} 點</td>
+                        <td class="py-2.5 px-3 text-center">
+                            <span class="inline-block px-2 py-0.5 rounded ${diffClass}">${diffText}</span>
+                        </td>
+                        <td class="py-2.5 px-3 text-center">${essayDiffText}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Toggle Comparison View Section
+        function toggleComparisonView() {
+            const sec = document.getElementById('comparisonSection');
+            isShowComparison = !isShowComparison;
+            if (isShowComparison) {
+                sec.classList.remove('hidden');
+                document.getElementById('btnToggleCompare').innerHTML = `<i class="fa-solid fa-chart-line"></i> 隱藏跨考次比較`;
+            } else {
+                sec.classList.add('hidden');
+                document.getElementById('btnToggleCompare').innerHTML = `<i class="fa-solid fa-chart-line"></i> 顯示跨考次比較`;
+            }
+        }
+
+        // Modal Controls for Import
+        function openImportModal() {
+            document.getElementById('inputExamTitle').value = `第 ${exams.length + 1} 次學習成就評量 (5A)`;
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+        }
+
+        function switchImportTab(type) {
+            const areaCsv = document.getElementById('areaImportCsv');
+            const areaText = document.getElementById('areaImportText');
+            const btnCsv = document.getElementById('tabBtnCsv');
+            const btnText = document.getElementById('tabBtnText');
+
+            if (type === 'csv') {
+                areaCsv.classList.remove('hidden');
+                areaText.classList.add('hidden');
+                btnCsv.className = 'py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
+                btnText.className = 'py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
+            } else {
+                areaCsv.classList.add('hidden');
+                areaText.classList.remove('hidden');
+                btnText.className = 'py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
+                btnCsv.className = 'py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
+            }
+        }
+
+        let uploadedCsvContent = "";
+
+        function handleFileSelect(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedCsvContent = e.target.result;
+                showToast("已成功載入 CSV 檔案內容！", "fa-file-csv", "text-emerald-400");
+            };
+            reader.readAsText(file, "UTF-8");
+        }
+
+        // Process Import Data
+        function processImportData() {
+            const title = document.getElementById('inputExamTitle').value.trim() || `第 ${exams.length + 1} 次學習成就評量`;
+            let rawText = uploadedCsvContent;
+
+            const isTextTab = !document.getElementById('areaImportText').classList.contains('hidden');
+            if (isTextTab) {
+                rawText = document.getElementById('pasteTextArea').value.trim();
+            }
+
+            if (!rawText) {
+                alert("請先選擇 CSV 檔案或貼上學生數據內容！");
+                return;
+            }
+
+            const parsedStudents = parseCsvText(rawText);
+            if (parsedStudents.length === 0) {
+                alert("無有效的學生資料列，請確認資料格式是否正確 (編號, 班級, 姓名, 總積分, 總積點, 作文級分)");
+                return;
+            }
+
+            const newExamId = `exam_${Date.now()}`;
+            exams.push({
+                id: newExamId,
+                title: title,
+                date: new Date().toISOString().slice(0, 7),
+                students: parsedStudents
+            });
+
+            currentExamId = newExamId;
+            renderExamSelector();
+            updateActiveExamData();
+            closeImportModal();
+            showToast(`成功匯入 ${parsedStudents.length} 筆資料並成立『${title}』！`, "fa-circle-check", "text-emerald-400");
+        }
+
+        // Parse CSV or Tab delimited string
+        function parseCsvText(text) {
+            const lines = text.split(/\r?\n/);
+            const result = [];
+            
+            lines.forEach((line) => {
+                if (!line.trim()) return;
+                const parts = line.split(/,|\t/);
+                // Skip header line
+                if (parts[0].includes('編號') || parts[2] === '姓名') return;
+
+                if (parts.length >= 6) {
+                    const id = parseInt(parts[0].trim()) || (result.length + 1);
+                    const classNum = parts[1].trim().replace('班', '');
+                    const name = parts[2].trim();
+                    const score = parseInt(parts[3].trim()) || 30;
+                    const credits = parseInt(parts[4].trim()) || 0;
+                    const essay = parseInt(parts[5].trim()) || 0;
+
+                    if (name) {
+                        result.push({ id, classNum, name, score, credits, essay });
+                    }
+                }
+            });
+
+            return result;
+        }
+
+        // Quick Preset Sample Generator for Exam 2
+        function loadSampleExam2() {
+            if (exams.some(e => e.title.includes('第 2 次'))) {
+                showToast("已存在第 2 次模擬考資料", "fa-circle-info", "text-indigo-400");
+                return;
+            }
+
+            // Simulate progress for exam 2
+            const exam1Students = exams[0].students;
+            const sample2Students = exam1Students.map(s => {
+                // Random progress -1 to +2 credits
+                const delta = Math.floor(Math.random() * 4) - 1;
+                const newCredits = Math.min(35, Math.max(26, s.credits + delta));
+                const essayDelta = Math.random() > 0.7 ? 1 : 0;
+                const newEssay = Math.min(6, s.essay + essayDelta);
+                return { ...s, credits: newCredits, essay: newEssay };
+            });
+
+            const newExamId = `exam_sample_2`;
+            exams.push({
+                id: newExamId,
+                title: "第 2 次學習成就評量 (5A)",
+                date: "2026-11",
+                students: sample2Students
+            });
+
+            currentExamId = newExamId;
+            renderExamSelector();
+            updateActiveExamData();
+            showToast("已成功自動生成並載入『第 2 次學習成就評量』測試數據！", "fa-wand-magic-sparkles", "text-amber-400");
+        }
+
+        // Quick Preset Sample Generator for Exam 3
+        function loadSampleExam3() {
+            if (!exams.some(e => e.title.includes('第 2 次'))) {
+                loadSampleExam2();
+            }
+
+            if (exams.some(e => e.title.includes('第 3 次'))) {
+                showToast("已存在第 3 次模擬考資料", "fa-circle-info", "text-indigo-400");
+                return;
+            }
+
+            const exam2Students = exams.find(e => e.title.includes('第 2 次')).students;
+            const sample3Students = exam2Students.map(s => {
+                const delta = Math.floor(Math.random() * 3); // 0 to 2 progress
+                const newCredits = Math.min(35, s.credits + delta);
+                return { ...s, credits: newCredits };
+            });
+
+            const newExamId = `exam_sample_3`;
+            exams.push({
+                id: newExamId,
+                title: "第 3 次會考前會考 (5A)",
+                date: "2027-02",
+                students: sample3Students
+            });
+
+            currentExamId = newExamId;
+            renderExamSelector();
+            updateActiveExamData();
+            showToast("已成功自動生成並載入『第 3 次會考前會考』測試數據！", "fa-wand-magic-sparkles", "text-amber-400");
+        }
+
+        function loadSampleExamData() {
+            document.getElementById('inputExamTitle').value = "第 2 次學習成就評量 (5A)";
+            document.getElementById('areaImportCsv').classList.add('hidden');
+            document.getElementById('areaImportText').classList.remove('hidden');
+            
+            // Build text sample
+            let sampleText = "編號,班級,姓名,總積分,總積點,作文級分\n";
+            exams[0].students.slice(0, 15).forEach((s, idx) => {
+                sampleText += `${s.id},${s.classNum},${s.name},30,${Math.min(35, s.credits + 1)},${s.essay}\n`;
+            });
+
+            document.getElementById('pasteTextArea').value = sampleText;
+            showToast("已載入範例文字，請點擊下方『確認匯入』", "fa-lightbulb", "text-amber-400");
+        }
+
+        // Export Active Data to CSV
+        function exportCSV() {
+            const activeExam = getCurrentExam();
+            let csvContent = "\uFEFF";
+            csvContent += "編號,班級,姓名,總積分,總積點,作文級分\n";
+
+            filteredStudents.forEach(s => {
+                csvContent += `${s.id},${s.classNum},${s.name},${s.score},${s.credits},${s.essay}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `陽明國中_${activeExam.title}_5A榜單.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`已成功下載『${activeExam.title}』 CSV 試算表！`, "fa-file-csv", "text-emerald-400");
+        }
+
+        // Single Student Management
+        function openAddModal() {
+            const activeExam = getCurrentExam();
+            document.getElementById('modalTitle').textContent = `新增學生至 ${activeExam.title}`;
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('inputID').value = activeExam.students.length > 0 ? Math.max(...activeExam.students.map(s => s.id)) + 1 : 1;
+            document.getElementById('inputClass').value = "";
+            document.getElementById('inputName').value = "";
+            document.getElementById('inputCredits').value = "30";
+            document.getElementById('inputEssay').value = "4";
+            document.getElementById('studentModal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const activeExam = getCurrentExam();
+            const student = activeExam.students.find(s => s.id === id);
+            if (!student) return;
+
+            document.getElementById('modalTitle').textContent = "編輯學生成績";
+            document.getElementById('editIndex').value = id;
+            document.getElementById('inputID').value = student.id;
+            document.getElementById('inputClass').value = student.classNum;
+            document.getElementById('inputName').value = student.name;
+            document.getElementById('inputCredits').value = student.credits;
+            document.getElementById('inputEssay').value = student.essay;
+            document.getElementById('studentModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('studentModal').classList.add('hidden');
+        }
+
+        function saveStudent(e) {
+            e.preventDefault();
+            const activeExam = getCurrentExam();
+            const editId = parseInt(document.getElementById('editIndex').value);
+            const id = parseInt(document.getElementById('inputID').value);
+            const classNum = document.getElementById('inputClass').value.trim();
+            const name = document.getElementById('inputName').value.trim();
+            const credits = parseInt(document.getElementById('inputCredits').value);
+            const essay = parseInt(document.getElementById('inputEssay').value);
+
+            if (editId === -1) {
+                activeExam.students.push({ id, classNum, name, score: 30, credits, essay });
+                showToast("已成功新增學生資料！", "fa-circle-check", "text-emerald-400");
+            } else {
+                const index = activeExam.students.findIndex(s => s.id === editId);
+                if (index !== -1) {
+                    activeExam.students[index] = { id, classNum, name, score: 30, credits, essay };
+                    showToast("已成功更新學生資料！", "fa-pen-to-square", "text-indigo-400");
+                }
+            }
+
+            closeModal();
+            populateClassFilterOptions();
+            applyFilters();
+            renderComparisonDashboard();
+        }
+
+        function deleteStudent(id) {
+            const activeExam = getCurrentExam();
+            if (confirm(`確定要刪除編號 ${id} 的學生紀錄嗎？`)) {
+                activeExam.students = activeExam.students.filter(s => s.id !== id);
+                populateClassFilterOptions();
+                applyFilters();
+                renderComparisonDashboard();
+                showToast("已成功刪除該筆紀錄", "fa-trash-can", "text-rose-400");
+            }
+        }
+
+        // Toast Helper
+        function showToast(msg, iconClass = "fa-circle-check", iconColor = "text-emerald-400") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            toastIcon.className = `fa-solid ${iconClass} ${iconColor}`;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
