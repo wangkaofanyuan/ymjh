@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高雄市陽明國中 115學年度 5A 模擬考成績追蹤系統 v2.0</title>
+    <title>高雄市陽明國中 115學年度 學習成就評量 (5A) 歷次模擬考追蹤系統</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons CDN -->
+    <link rel="icon" type="image/png" href="./ymjh.png">
+    <link rel="shortcut icon" type="image/png" href="./ymjh.png">
+    <link rel="apple-touch-icon" href="./ymjh.png">
+    <meta name="theme-color" content="#1e1b4b">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f8fafc;
         }
         .table-container {
             max-height: 550px;
@@ -40,75 +43,112 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        /* Reliable show/hide for permission-gated elements regardless of Tailwind class order */
+        .is-hidden {
+            display: none !important;
+        }
+        .quick-filter-chip.active {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-12">
 
-    <!-- Header & Navigation Bar -->
-    <header class="bg-indigo-950 text-white shadow-xl sticky top-0 z-30 border-b border-indigo-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                <!-- Brand Title -->
+    <!-- Header -->
+    <header class="bg-indigo-900 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-xl text-amber-300 shadow-md">
-                        <i class="fa-solid fa-school"></i>
+                    <span class="w-11 h-11 rounded-xl bg-white/95 flex items-center justify-center overflow-hidden shadow-sm border border-indigo-300/50">
+                        <img src="ymjh.png"
+                             alt="陽明國中校徽"
+                             class="w-9 h-9 object-contain"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                        <i class="fa-solid fa-school text-indigo-700 text-xl" style="display:none;"></i>
                     </span>
                     <div>
-                        <div class="flex items-center gap-2 text-indigo-300 text-xs font-semibold tracking-wider">
+                        <div class="flex items-center gap-2 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-0.5">
                             高雄市立陽明國民中學
                         </div>
-                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                            5A 模擬考成績追蹤系統 <span class="bg-indigo-800 text-amber-300 text-xs font-bold px-2 py-0.5 rounded-full border border-indigo-600">v2.0</span>
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">
+                            5A 模擬考追蹤系統
                         </h1>
                     </div>
                 </div>
 
-                <!-- Exam Switcher & Navigation Links -->
+                <!-- Permission / Mode Indicator -->
+                <div class="flex items-center gap-2.5 order-first lg:order-last">
+                    <div id="modeIndicatorBrowse" class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 bg-indigo-800/80 border border-indigo-600 text-indigo-100 text-xs font-bold px-3 py-2 rounded-xl">
+                            <i class="fa-solid fa-eye"></i> 瀏覽模式
+                        </span>
+                        <button onclick="openAdminLoginModal()" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm">
+                            <i class="fa-solid fa-lock"></i> 管理登入
+                        </button>
+                    </div>
+                    <div id="modeIndicatorAdmin" class="hidden flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 bg-emerald-600/90 border border-emerald-400 text-white text-xs font-bold px-3 py-2 rounded-xl">
+                            <i class="fa-solid fa-lock-open"></i> 編輯模式
+                        </span>
+                        <span class="hidden sm:inline-flex items-center gap-1.5 bg-indigo-800/80 text-indigo-100 text-xs font-semibold px-3 py-2 rounded-xl">
+                            <i class="fa-solid fa-user-shield"></i> 管理者
+                        </span>
+                        <button onclick="logoutAdmin()" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm">
+                            <i class="fa-solid fa-right-from-bracket"></i> 登出
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nav + Exam Switcher + Tool Actions -->
+            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mt-4 pt-4 border-t border-indigo-800/70">
+                <!-- Nav -->
+                <nav class="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                    <a href="#sectionOverview" class="px-3 py-1.5 rounded-lg hover:bg-indigo-800/70 transition"><i class="fa-solid fa-chart-simple mr-1.5"></i>總覽</a>
+                    <a href="#comparisonSection" class="px-3 py-1.5 rounded-lg hover:bg-indigo-800/70 transition"><i class="fa-solid fa-chart-line mr-1.5"></i>歷次比較</a>
+                    <a href="#sectionStudents" class="px-3 py-1.5 rounded-lg hover:bg-indigo-800/70 transition"><i class="fa-solid fa-user-graduate mr-1.5"></i>學生</a>
+                    <a href="#" onclick="handleAdminNavClick(event)" class="px-3 py-1.5 rounded-lg hover:bg-indigo-800/70 transition"><i class="fa-solid fa-gear mr-1.5"></i>管理</a>
+                </nav>
+
+                <!-- Exam Switcher & Tool Actions -->
                 <div class="flex flex-wrap items-center gap-2.5">
                     <!-- Exam Selection Dropdown -->
-                    <div class="bg-indigo-900/90 p-1 rounded-xl flex items-center border border-indigo-700/80 shadow-inner">
-                        <span class="text-xs text-indigo-200 px-2 font-medium whitespace-nowrap"><i class="fa-solid fa-bookmark text-amber-400 mr-1"></i>當前考次:</span>
-                        <select id="examSelector" onchange="switchExam(this.value)" class="bg-indigo-950 text-white text-sm font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 border border-indigo-600 cursor-pointer">
+                    <div class="bg-indigo-800/80 p-1 rounded-xl flex items-center border border-indigo-700/60 shadow-inner">
+                        <span class="text-xs text-indigo-200 px-2 font-medium"><i class="fa-solid fa-bookmark mr-1"></i>考次:</span>
+                        <select id="examSelector" onchange="switchExam(this.value)" class="bg-indigo-950 text-white text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 border border-indigo-600">
                             <!-- Options generated dynamically -->
                         </select>
+                        <button onclick="requestDeleteExam()" title="刪除此考次（管理模式）" class="admin-only is-hidden inline-flex ml-1 mr-1 text-indigo-300 hover:text-rose-400 px-1.5" >
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </div>
 
-                    <!-- Quick Navigation -->
-                    <nav class="flex items-center bg-indigo-900/50 p-1 rounded-xl border border-indigo-800 text-xs font-semibold">
-                        <a href="#section-dashboard" class="px-3 py-1.5 rounded-lg text-indigo-100 hover:bg-indigo-800 transition flex items-center gap-1">
-                            <i class="fa-solid fa-chart-pie text-amber-400"></i> 總覽
-                        </a>
-                        <a href="#section-comparison" class="px-3 py-1.5 rounded-lg text-indigo-100 hover:bg-indigo-800 transition flex items-center gap-1">
-                            <i class="fa-solid fa-chart-line text-purple-300"></i> 歷次比較
-                        </a>
-                        <a href="#section-students" class="px-3 py-1.5 rounded-lg text-indigo-100 hover:bg-indigo-800 transition flex items-center gap-1">
-                            <i class="fa-solid fa-user-graduate text-emerald-300"></i> 學生
-                        </a>
-                    </nav>
+                    <button onclick="openImportModal()" class="admin-only is-hidden inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-sm transition shadow-sm">
+                        <i class="fa-solid fa-file-import"></i> 匯入新考次
+                    </button>
 
-                    <!-- Permission Mode Controls -->
-                    <div class="flex items-center gap-2 border-l border-indigo-800 pl-2">
-                        <!-- Browse Mode Badge & Login Button -->
-                        <div id="browseModeBadge" class="flex items-center gap-2">
-                            <span class="bg-slate-800 text-slate-300 border border-slate-700 text-xs px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5">
-                                <i class="fa-solid fa-eye text-sky-400"></i> 瀏覽模式
-                            </span>
-                            <button onclick="openAdminLoginModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
-                                <i class="fa-solid fa-lock"></i> 管理登入
-                            </button>
-                        </div>
+                    <button onclick="toggleComparisonView()" id="btnToggleCompare" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-medium px-3.5 py-2 rounded-xl text-sm transition shadow-sm">
+                        <i class="fa-solid fa-chart-line"></i> 跨考次比較
+                    </button>
 
-                        <!-- Admin Mode Badge & Logout Button (Hidden by default) -->
-                        <div id="adminModeBadge" class="hidden flex items-center gap-2">
-                            <span class="bg-emerald-950 text-emerald-300 border border-emerald-700 text-xs px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 animate-pulse">
-                                <i class="fa-solid fa-unlock text-emerald-400"></i> 編輯模式
-                            </span>
-                            <span class="text-xs text-indigo-200 hidden sm:inline font-medium">👤 管理者</span>
-                            <button onclick="handleAdminLogout()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition shadow flex items-center gap-1">
-                                <i class="fa-solid fa-right-from-bracket"></i> 登出
-                            </button>
-                        </div>
-                    </div>
+                    <button onclick="exportCSV()" class="admin-only is-hidden inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-file-excel"></i> 匯出 CSV
+                    </button>
+
+                    <button onclick="openAddModal()" class="admin-only is-hidden inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        <i class="fa-solid fa-plus"></i> 新增學生
+                    </button>
+
+                    <button onclick="backupData()" class="admin-only is-hidden inline-flex items-center gap-2 bg-indigo-700 hover:bg-indigo-600 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm border border-indigo-500">
+                        <i class="fa-solid fa-box-archive"></i> 備份資料
+                    </button>
+
+                    <button onclick="triggerRestoreFile()" class="admin-only is-hidden inline-flex items-center gap-2 bg-indigo-700 hover:bg-indigo-600 text-white px-3.5 py-2 rounded-xl text-sm font-medium transition shadow-sm border border-indigo-500">
+                        <i class="fa-solid fa-rotate-left"></i> 還原資料
+                    </button>
+                    <input type="file" id="restoreFileInput" accept=".json" onchange="handleRestoreFileSelect(event)" class="hidden">
                 </div>
             </div>
         </div>
@@ -116,472 +156,323 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
 
+        <div id="sectionOverview">
+
         <!-- Active Exam Summary Banner -->
-        <div class="bg-white border border-indigo-100 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
             <div class="flex items-center gap-3">
-                <span class="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-xl shadow-md">
+                <span class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow">
                     <i class="fa-solid fa-graduation-cap"></i>
                 </span>
                 <div>
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-lg font-bold text-slate-900" id="activeExamTitle">第 1 次學習成就評量 (5A 榜單)</h2>
-                        <span class="text-xs bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-md" id="activeExamDate">2026-09</span>
-                    </div>
-                    <p class="text-xs text-slate-500" id="activeExamSubtitle">包含完整的 5A 學生名單、總積點與作文級分數據</p>
+                    <h2 class="text-lg font-bold text-indigo-950" id="activeExamTitle">第 1 次學習成就評量 (5A 榜單)</h2>
+                    <p class="text-xs text-indigo-700" id="activeExamSubtitle">已載入學生資料與積點明細</p>
                 </div>
             </div>
-
-            <!-- Admin Toolbar Actions -->
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Admin Only Actions -->
-                <div class="admin-only hidden flex items-center gap-2">
-                    <button onclick="openImportModal()" class="inline-flex items-center gap-1.5 bg-indigo-900 hover:bg-indigo-800 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-sm">
-                        <i class="fa-solid fa-file-import text-amber-400"></i> 匯入新考次
-                    </button>
-                    <button onclick="openAddModal()" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-sm">
-                        <i class="fa-solid fa-plus"></i> 新增學生
-                    </button>
-                    <button onclick="backupData()" class="inline-flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-sm" title="備份 JSON">
-                        <i class="fa-solid fa-box-archive text-amber-300"></i> 備份
-                    </button>
-                    <label class="inline-flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-sm cursor-pointer" title="還原 JSON">
-                        <i class="fa-solid fa-rotate-left text-sky-300"></i> 還原
-                        <input type="file" accept=".json" onchange="restoreData(event)" class="hidden">
-                    </label>
-                </div>
-
-                <!-- Public Actions -->
-                <button onclick="exportCSV()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-sm">
-                    <i class="fa-solid fa-file-excel"></i> 匯出 CSV
+            <div class="admin-only is-hidden inline-flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500">快速範例考次載入：</span>
+                <button onclick="loadSampleExam2()" class="text-xs bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-300 font-semibold px-2.5 py-1 rounded-lg transition">
+                    + 載入第2次模擬考 (範例)
                 </button>
-
-                <!-- Quick Load Sample Exams (For Testing) -->
-                <div class="border-l border-slate-200 pl-2 flex items-center gap-1">
-                    <button onclick="loadSampleExam2()" class="text-xs bg-slate-100 hover:bg-indigo-50 text-indigo-700 border border-slate-300 font-semibold px-2 py-1 rounded-md transition" title="自動產生第2次試算範例">
-                        + 載入第2次範例
-                    </button>
-                    <button onclick="loadSampleExam3()" class="text-xs bg-slate-100 hover:bg-indigo-50 text-indigo-700 border border-slate-300 font-semibold px-2 py-1 rounded-md transition" title="自動產生第3次試算範例">
-                        + 載入第3次範例
-                    </button>
-                </div>
+                <button onclick="loadSampleExam3()" class="text-xs bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-300 font-semibold px-2.5 py-1 rounded-lg transition">
+                    + 載入第3次模擬考 (範例)
+                </button>
             </div>
         </div>
 
-        <!-- Section: Dashboard Global KPIs -->
-        <div id="section-dashboard" class="scroll-mt-20 mb-6">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-indigo-600"></i> 當前考次全局統計 Dashboard (不受下方搜尋篩選影響)
-                </h3>
-                <span class="text-xs text-slate-500 font-medium">資料範圍：全校進入 5A 榜單學生</span>
-            </div>
-
-            <!-- KPI Cards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- 1. Total 5A Count Card -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">5A 人數</p>
-                        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg font-bold">
-                            <i class="fa-solid fa-user-graduate"></i>
-                        </div>
+        <!-- Current Exam Global Statistics Dashboard -->
+        <section id="currentExamDashboard" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="inline-flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide uppercase text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1">
+                            <i class="fa-solid fa-gauge-high"></i> Current Exam Dashboard
+                        </span>
+                        <span class="text-[11px] font-semibold text-slate-400">固定以本次考次全體資料計算</span>
                     </div>
-                    <div class="mt-2">
-                        <h3 class="text-3xl font-black text-slate-900 tracking-tight" id="kpi-total-count">0 <span class="text-sm font-normal text-slate-500">人</span></h3>
-                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                            <span class="text-xs font-semibold text-emerald-600" id="kpi-diff-count">較前次: --</span>
-                            <span class="text-xs text-slate-400">當前考次總進榜</span>
-                        </div>
-                    </div>
+                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">本次模擬考全局統計 Dashboard</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">集中掌握 5A 榜單規模、平均積點、作文高分與班級分布；不受下方搜尋與篩選條件影響。</p>
                 </div>
-
-                <!-- 2. Avg Credits Card -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">平均積點</p>
-                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-lg font-bold">
-                            <i class="fa-solid fa-star"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <h3 class="text-3xl font-black text-slate-900 tracking-tight" id="kpi-avg-credits">0 <span class="text-sm font-normal text-slate-500">點</span></h3>
-                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                            <span class="text-xs font-semibold text-emerald-600" id="kpi-diff-credits">較前次: --</span>
-                            <span class="text-xs text-slate-400">滿點 35 點</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Essay 6 Score Card -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">作文 6 級分人數</p>
-                        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg font-bold">
-                            <i class="fa-solid fa-pen-nib"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <h3 class="text-3xl font-black text-slate-900 tracking-tight" id="kpi-essay-6">0 <span class="text-sm font-normal text-slate-500">人</span></h3>
-                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                            <span class="text-xs font-semibold text-amber-600" id="kpi-essay-6-pct">佔比 0%</span>
-                            <span class="text-xs text-slate-400">作文最高滿級分</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Top Class Card -->
-                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">5A 人數最多班級</p>
-                        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg font-bold">
-                            <i class="fa-solid fa-trophy"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <h3 class="text-3xl font-black text-slate-900 tracking-tight" id="kpi-top-class">-- <span class="text-sm font-normal text-slate-500">班</span></h3>
-                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                            <span class="text-xs font-semibold text-purple-600" id="kpi-top-class-count">0 人進榜</span>
-                            <span class="text-xs text-slate-400">班級榜首</span>
-                        </div>
-                    </div>
+                <div class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-max">
+                    <i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i>
+                    切換考次後自動更新
                 </div>
             </div>
+
+            <!-- KPI Metrics Grid -->
+            <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-5">
+                <div class="bg-slate-50/70 rounded-xl p-4 sm:p-5 border border-slate-200 flex items-center justify-between min-w-0">
+                    <div class="min-w-0">
+                        <p class="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase">5A 人數</p>
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1" id="kpi-total-count">0 <span class="text-xs sm:text-sm font-normal text-slate-500">人</span></h3>
+                        <p class="text-[11px] sm:text-xs text-indigo-600 font-medium mt-1 truncate" id="kpi-diff-count">較前次: --</p>
+                    </div>
+                    <div class="hidden sm:flex w-11 h-11 bg-indigo-100 text-indigo-600 rounded-xl items-center justify-center text-lg shrink-0 ml-2"><i class="fa-solid fa-user-graduate"></i></div>
+                </div>
+                <div class="bg-slate-50/70 rounded-xl p-4 sm:p-5 border border-slate-200 flex items-center justify-between min-w-0">
+                    <div class="min-w-0">
+                        <p class="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase">平均總積點</p>
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1" id="kpi-avg-credits">0 <span class="text-xs sm:text-sm font-normal text-slate-500">點</span></h3>
+                        <p class="text-[11px] sm:text-xs text-emerald-600 font-medium mt-1 truncate" id="kpi-diff-credits">較前次: --</p>
+                    </div>
+                    <div class="hidden sm:flex w-11 h-11 bg-emerald-100 text-emerald-600 rounded-xl items-center justify-center text-lg shrink-0 ml-2"><i class="fa-solid fa-star"></i></div>
+                </div>
+                <div class="bg-slate-50/70 rounded-xl p-4 sm:p-5 border border-slate-200 flex items-center justify-between min-w-0">
+                    <div class="min-w-0">
+                        <p class="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase">作文 6 級分</p>
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1" id="kpi-essay-6">0 <span class="text-xs sm:text-sm font-normal text-slate-500">人</span></h3>
+                        <p class="text-[11px] sm:text-xs text-amber-600 font-medium mt-1 truncate" id="kpi-essay-6-pct">佔比 0%</p>
+                    </div>
+                    <div class="hidden sm:flex w-11 h-11 bg-amber-100 text-amber-600 rounded-xl items-center justify-center text-lg shrink-0 ml-2"><i class="fa-solid fa-pen-nib"></i></div>
+                </div>
+                <div class="bg-slate-50/70 rounded-xl p-4 sm:p-5 border border-slate-200 flex items-center justify-between min-w-0">
+                    <div class="min-w-0">
+                        <p class="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase">5A 最多班級</p>
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900 mt-1" id="kpi-top-class">-- <span class="text-xs sm:text-sm font-normal text-slate-500">班</span></h3>
+                        <p class="text-[11px] sm:text-xs text-purple-600 font-medium mt-1 truncate" id="kpi-top-class-count">0 人進榜</p>
+                    </div>
+                    <div class="hidden sm:flex w-11 h-11 bg-purple-100 text-purple-600 rounded-xl items-center justify-center text-lg shrink-0 ml-2"><i class="fa-solid fa-trophy"></i></div>
+                </div>
+            </div>
+
+            <!-- Two core charts of this exam -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
+                <div class="lg:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-chart-pie text-indigo-600"></i><span id="labelEssayChart">作文級分分佈</span></h3>
+                            <p class="text-[11px] text-slate-400 mt-1">本次 5A 榜單全體作文級分結構</p>
+                        </div>
+                    </div>
+                    <div class="h-56 sm:h-64 relative"><canvas id="essayChart"></canvas></div>
+                </div>
+                <div class="lg:col-span-3 bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-chart-column text-emerald-600"></i>各班 5A 人數統計</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">依進榜人數排序，呈現前 12 高班級</p>
+                        </div>
+                    </div>
+                    <div class="h-56 sm:h-64 relative"><canvas id="classChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Current Filter Result Banner: deliberately outside the global dashboard -->
+        <div class="bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <p class="text-xs sm:text-sm text-slate-600">
+                <i class="fa-solid fa-filter text-slate-400 mr-1.5"></i>
+                <span class="font-semibold text-slate-700">目前篩選結果：</span>
+                <span id="filterSummaryText">目前顯示全部學生資料</span>
+            </p>
+            <span id="filterSummaryCount" class="text-sm font-bold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full w-max">0 / 0 人</span>
         </div>
 
-        <!-- Section: Visual Charts for Single Exam -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <!-- Essay Score Chart -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-                <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-indigo-600"></i> <span id="labelEssayChart">作文級分分佈</span>
-                </h3>
-                <div class="h-56 relative">
-                    <canvas id="essayChart"></canvas>
-                </div>
-            </div>
+        </div><!-- /#sectionOverview -->
 
-            <!-- Class Top Count Chart -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm lg:col-span-2">
-                <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-column text-emerald-600"></i> 各班 5A 人數統計 (前 12 高班級)
-                </h3>
-                <div class="h-56 relative">
-                    <canvas id="classChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Section: Multi-Exam Comparison Dashboard -->
-        <div id="section-comparison" class="bg-white rounded-2xl border border-purple-200 shadow-md p-6 mb-6 scroll-mt-20">
+        <!-- Multi-Exam Comparison Dashboard Section (Collapsible / Toggleable) -->
+        <div id="comparisonSection" class="bg-white rounded-2xl border border-purple-200 shadow-md p-6 mb-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-slate-100 gap-3">
                 <div>
                     <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-line text-purple-600"></i> 歷次模擬考跨考次趨勢與進步比較
+                        <i class="fa-solid fa-chart-line text-purple-600"></i> 歷次模擬考跨考次比較與趨勢分析
                     </h2>
-                    <p class="text-xs text-slate-500 mt-0.5">追蹤全校 5A 榜單總人數變化、平均積點成長與個案進退步</p>
+                    <p class="text-xs text-slate-500 mt-0.5">跨考次觀察 5A 榜單總人數變化、平均積點增長與作文高分表現</p>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1 rounded-full w-max" id="examCountBadge">已載入 1 次模擬考數據</span>
-                    <button onclick="toggleComparisonView()" id="btnToggleCompare" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-semibold transition">
-                        <i class="fa-solid fa-eye-slash mr-1"></i> 隱藏比較
-                    </button>
+                <span class="text-xs font-bold bg-purple-100 text-purple-800 px-3 py-1 rounded-full w-max" id="examCountBadge">已載入 1 次模擬考數據</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Trend Line Chart for 5A Count and Avg Credits -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-trend-up text-indigo-600"></i> 5A 人數與平均積點歷次演變
+                    </h3>
+                    <div class="h-60 relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Essay Distribution Trend -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-emerald-600"></i> 歷次作文級分人數分佈比較
+                    </h3>
+                    <div class="h-60 relative">
+                        <canvas id="essayCompareChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <div id="comparisonContent">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- Trend Line Chart for 5A Count and Avg Credits -->
-                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-arrow-trend-up text-indigo-600"></i> 5A 人數與平均積點歷次演變
-                        </h3>
-                        <div class="h-60 relative">
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Essay Distribution Trend -->
-                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-column text-emerald-600"></i> 歷次作文級分人數分佈比較
-                        </h3>
-                        <div class="h-60 relative">
-                            <canvas id="essayCompareChart"></canvas>
-                        </div>
-                    </div>
+            <!-- Student Progress Table (Individual comparisons across exams) -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                <div class="px-4 py-3 bg-slate-100/80 border-b border-slate-200 flex justify-between items-center">
+                    <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-user-check text-indigo-600"></i> 學生歷次跨考次成績表現比較表
+                    </h4>
+                    <span class="text-xs text-slate-500">以學生姓名/編號比對歷次進退步點數</span>
                 </div>
-
-                <!-- Student Progress Table -->
-                <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                    <div class="px-4 py-3 bg-slate-100/80 border-b border-slate-200 flex justify-between items-center">
-                        <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-user-check text-indigo-600"></i> 學生歷次跨考次成績表現比較表
-                        </h4>
-                        <span class="text-xs text-slate-500">以學生姓名與班級自動比對歷次進退步</span>
-                    </div>
-                    <div class="max-h-64 overflow-y-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky-th">
-                                    <th class="py-2.5 px-3">編號</th>
-                                    <th class="py-2.5 px-3">班級</th>
-                                    <th class="py-2.5 px-3">姓名</th>
-                                    <th class="py-2.5 px-3 text-center" id="colHeaderExamPrevious">上次積點</th>
-                                    <th class="py-2.5 px-3 text-center" id="colHeaderExamCurrent">本次積點</th>
-                                    <th class="py-2.5 px-3 text-center">積點變化 (Δ)</th>
-                                    <th class="py-2.5 px-3 text-center">作文變化</th>
-                                    <th class="py-2.5 px-3 text-center">歷次詳細</th>
-                                </tr>
-                            </thead>
-                            <tbody id="studentProgressTableBody" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically via JS -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="max-h-64 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <th class="py-2.5 px-3">編號</th>
+                                <th class="py-2.5 px-3">班級</th>
+                                <th class="py-2.5 px-3">姓名</th>
+                                <th class="py-2.5 px-3 text-center" id="colHeaderExamPrevious">上次積點</th>
+                                <th class="py-2.5 px-3 text-center" id="colHeaderExamCurrent">本次積點</th>
+                                <th class="py-2.5 px-3 text-center">積點變化 (Δ)</th>
+                                <th class="py-2.5 px-3 text-center">作文級分變化</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentProgressTableBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Section: Student Directory & Filtering -->
-        <div id="section-students" class="scroll-mt-20">
-            <!-- Search, Filter & View Controls Card -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6 p-4">
-                <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                    
-                    <!-- Search Input -->
-                    <div class="relative w-full lg:w-80">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="🔍 搜尋學生姓名／班級／編號..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                    </div>
+        <div id="sectionStudents">
 
-                    <!-- Dropdown Select Filters -->
-                    <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-                        <!-- Class Filter -->
-                        <div class="flex items-center gap-1">
-                            <label for="classFilter" class="text-xs font-semibold text-slate-600">班級:</label>
-                            <select id="classFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <option value="ALL">全部班級</option>
-                            </select>
-                        </div>
-
-                        <!-- Essay Filter -->
-                        <div class="flex items-center gap-1">
-                            <label for="essayFilter" class="text-xs font-semibold text-slate-600">作文:</label>
-                            <select id="essayFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <option value="ALL">全部級分</option>
-                                <option value="6">6 級分</option>
-                                <option value="5">5 級分</option>
-                                <option value="4">4 級分</option>
-                                <option value="3">3 級分</option>
-                                <option value="2">2 級分</option>
-                            </select>
-                        </div>
-
-                        <!-- Credits Filter -->
-                        <div class="flex items-center gap-1">
-                            <label for="creditsFilter" class="text-xs font-semibold text-slate-600">積點:</label>
-                            <select id="creditsFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <option value="ALL">全部積點</option>
-                                <option value="35">35 點 (滿點)</option>
-                                <option value="34">34 點</option>
-                                <option value="33">33 點</option>
-                                <option value="32">32 點</option>
-                                <option value="31">31 點</option>
-                                <option value="30">30 點</option>
-                                <option value="29-less">29點以下</option>
-                            </select>
-                        </div>
-
-                        <!-- View Switcher (Cards vs Table) -->
-                        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold ml-auto sm:ml-0">
-                            <button id="btnViewCard" onclick="switchViewMode('card')" class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm">
-                                <i class="fa-solid fa-address-card"></i> 卡片模式
-                            </button>
-                            <button id="btnViewTable" onclick="switchViewMode('table')" class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-200">
-                                <i class="fa-solid fa-table-list"></i> 表格模式
-                            </button>
-                        </div>
-                    </div>
+        <!-- Search, Filter & Spreadsheet Controls -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-4 p-4">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+                <!-- Search Bar -->
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="🔍 搜尋學生姓名／班級／編號" class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
 
-                <!-- Quick Filter Chips -->
-                <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1"><i class="fa-solid fa-bolt text-amber-500 mr-1"></i>快速篩選:</span>
-                    <button onclick="setQuickFilter('ALL')" id="chip-all" class="px-3 py-1 rounded-full text-xs font-semibold transition border border-indigo-600 bg-indigo-600 text-white shadow-sm">
-                        全部學生
-                    </button>
-                    <button onclick="setQuickFilter('FULL_POINTS')" id="chip-35" class="px-3 py-1 rounded-full text-xs font-semibold transition border border-slate-200 bg-white text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700">
-                        ⭐ 35點滿點
-                    </button>
-                    <button onclick="setQuickFilter('ESSAY_6')" id="chip-essay6" class="px-3 py-1 rounded-full text-xs font-semibold transition border border-slate-200 bg-white text-slate-600 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700">
-                        📝 作文6級分
-                    </button>
-                    <button onclick="setQuickFilter('PROGRESS')" id="chip-progress" class="px-3 py-1 rounded-full text-xs font-semibold transition border border-slate-200 bg-white text-slate-600 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700">
-                        📈 積點進步
-                    </button>
-                    <button onclick="setQuickFilter('REGRESS')" id="chip-regress" class="px-3 py-1 rounded-full text-xs font-semibold transition border border-slate-200 bg-white text-slate-600 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700">
-                        ⚠️ 積點下降
-                    </button>
+                <!-- Filters Group -->
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Class Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="classFilter" class="text-xs font-semibold text-slate-600">班級:</label>
+                        <select id="classFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部班級</option>
+                        </select>
+                    </div>
 
-                    <button onclick="resetFilters()" class="text-slate-400 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded hover:bg-slate-100 transition ml-auto">
+                    <!-- Essay Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="essayFilter" class="text-xs font-semibold text-slate-600">作文級分:</label>
+                        <select id="essayFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部級分</option>
+                            <option value="6">6 級分</option>
+                            <option value="5">5 級分</option>
+                            <option value="4">4 級分</option>
+                            <option value="3">3 級分</option>
+                            <option value="2">2 級分</option>
+                        </select>
+                    </div>
+
+                    <!-- Credits Filter -->
+                    <div class="flex items-center gap-1">
+                        <label for="creditsFilter" class="text-xs font-semibold text-slate-600">總積點:</label>
+                        <select id="creditsFilter" onchange="applyFilters()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">全部積點</option>
+                            <option value="35">35 點 (滿點)</option>
+                            <option value="34">34 點</option>
+                            <option value="33">33 點</option>
+                            <option value="32">32 點</option>
+                            <option value="31">31 點</option>
+                            <option value="30">30 點</option>
+                            <option value="29-less">29點以下</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset Filters Button -->
+                    <button onclick="resetFilters()" class="text-slate-500 hover:text-indigo-600 text-xs font-semibold px-2 py-1 rounded hover:bg-slate-100 transition">
                         <i class="fa-solid fa-arrows-rotate"></i> 重置篩選
                     </button>
                 </div>
             </div>
 
-            <!-- Filtered Summary Indicator Banner -->
-            <div id="filterSummaryBanner" class="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-xs font-semibold text-indigo-900">
-                <span id="filterSummaryText">🔍 目前篩選結果：共 138 人</span>
-                <span id="filterSummarySub" class="text-indigo-600 font-normal">顯示當前符合條件之學生清單</span>
-            </div>
-
-            <!-- Student Card Grid View -->
-            <div id="studentCardContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 mb-8">
-                <!-- Cards rendered dynamically via JS -->
-            </div>
-
-            <!-- Student Data Table View (Preserved Table Mode) -->
-            <div id="studentTableContainer" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
-                <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-table text-indigo-600"></i>
-                        <h2 class="text-base font-bold text-slate-800" id="tableHeaderTitle">5A 學生成績明細試算表</h2>
-                        <span id="recordCountBadge" class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">138 筆資料</span>
-                    </div>
-                    <p class="text-xs text-slate-500 hidden sm:block">點擊欄位標題可進行排序</p>
-                </div>
-
-                <!-- Table Container -->
-                <div class="table-container">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider sticky-th border-b border-slate-200">
-                                <th onclick="sortTable('id')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
-                                    編號 <span id="sort-icon-id" class="text-slate-400">↕</span>
-                                </th>
-                                <th onclick="sortTable('classNum')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
-                                    班級 <span id="sort-icon-classNum" class="text-slate-400">↕</span>
-                                </th>
-                                <th onclick="sortTable('name')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
-                                    姓名 <span id="sort-icon-name" class="text-slate-400">↕</span>
-                                </th>
-                                <th onclick="sortTable('score')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
-                                    總積分 <span id="sort-icon-score" class="text-slate-400">↕</span>
-                                </th>
-                                <th onclick="sortTable('credits')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
-                                    總積點 <span id="sort-icon-credits" class="text-slate-400">↕</span>
-                                </th>
-                                <th onclick="sortTable('essay')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
-                                    作文級分 <span id="sort-icon-essay" class="text-slate-400">↕</span>
-                                </th>
-                                <th class="py-3.5 px-4 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Rows rendered via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Table Footer -->
-                <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
-                    <span>備註：此系統支援多次模擬考成效追蹤與比較。</span>
-                    <span>陽明國中教務處評量統計</span>
-                </div>
+            <!-- Quick Filter Chips -->
+            <div class="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+                <span class="text-xs font-semibold text-slate-500 mr-1">快速篩選：</span>
+                <button data-qf="ALL" onclick="setQuickFilter('ALL')" class="quick-filter-chip active border border-slate-300 text-slate-600 bg-white text-xs font-semibold px-3 py-1.5 rounded-full transition">全部</button>
+                <button data-qf="FULL35" onclick="setQuickFilter('FULL35')" class="quick-filter-chip border border-slate-300 text-slate-600 bg-white text-xs font-semibold px-3 py-1.5 rounded-full transition">⭐ 35點滿點</button>
+                <button data-qf="ESSAY6" onclick="setQuickFilter('ESSAY6')" class="quick-filter-chip border border-slate-300 text-slate-600 bg-white text-xs font-semibold px-3 py-1.5 rounded-full transition">📝 作文6</button>
+                <button data-qf="IMPROVED" onclick="setQuickFilter('IMPROVED')" class="quick-filter-chip border border-slate-300 text-slate-600 bg-white text-xs font-semibold px-3 py-1.5 rounded-full transition">📈 積點進步</button>
+                <button data-qf="DECLINED" onclick="setQuickFilter('DECLINED')" class="quick-filter-chip border border-slate-300 text-slate-600 bg-white text-xs font-semibold px-3 py-1.5 rounded-full transition">⚠️ 積點下降</button>
             </div>
         </div>
+
+        <!-- View Mode Toggle + Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-table text-indigo-600"></i>
+                <h2 class="text-base font-bold text-slate-800" id="tableHeaderTitle">5A 學生成績明細</h2>
+                <span id="recordCountBadge" class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">138 筆資料</span>
+            </div>
+            <div class="inline-flex bg-slate-100 border border-slate-200 rounded-xl p-1 gap-1 w-max">
+                <button id="btnViewCard" onclick="setViewMode('card')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-white text-indigo-700 shadow-sm">
+                    <i class="fa-solid fa-user"></i> 卡片模式
+                </button>
+                <button id="btnViewTable" onclick="setViewMode('table')" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-500">
+                    <i class="fa-solid fa-table-cells-large"></i> 表格模式
+                </button>
+            </div>
+        </div>
+
+        <!-- Student Card Grid -->
+        <div id="cardViewContainer" class="mb-8">
+            <div id="studentCardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                <!-- Cards rendered via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Spreadsheet Data Table Card -->
+        <div id="tableViewContainer" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8 hidden">
+            <!-- Table Container -->
+            <div class="table-container">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider sticky-th border-b border-slate-200">
+                            <th onclick="sortTable('id')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                編號 <span id="sort-icon-id" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('classNum')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                班級 <span id="sort-icon-classNum" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('name')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition">
+                                姓名 <span id="sort-icon-name" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('score')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                總積分 <span id="sort-icon-score" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('credits')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                總積點 <span id="sort-icon-credits" class="text-slate-400">↕</span>
+                            </th>
+                            <th onclick="sortTable('essay')" class="py-3.5 px-4 cursor-pointer hover:bg-slate-200 transition text-center">
+                                作文級分 <span id="sort-icon-essay" class="text-slate-400">↕</span>
+                            </th>
+                            <th class="py-3.5 px-4 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Rows rendered via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
+                <span>備註：此系統支援多次模擬考成效追蹤與比較。</span>
+                <span>陽明國中教務處評量統計</span>
+            </div>
+        </div>
+
+        </div><!-- /#sectionStudents -->
 
     </main>
-
-    <!-- Admin Login Modal -->
-    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
-            <div class="px-6 py-4 bg-indigo-950 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    <i class="fa-solid fa-lock text-amber-400"></i> 管理者登入
-                </h3>
-                <button onclick="closeAdminLoginModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">×</button>
-            </div>
-            
-            <form onsubmit="handleAdminLogin(event)" class="p-6 space-y-4">
-                <p class="text-xs text-slate-600">登入管理模式後即可進行學生資料新增、修改、刪除、考次匯入與備份還原。</p>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">請輸入管理密碼</label>
-                    <div class="relative">
-                        <input type="password" id="adminPasswordInput" required placeholder="請輸入管理密碼..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none pr-10 font-mono">
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                            <i id="pwdEyeIcon" class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-1">預設系統管理密碼：<code class="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-bold">admin</code></p>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeAdminLoginModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">取消</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-bold rounded-xl text-xs shadow-md transition">
-                        解鎖管理權限
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Student Detail / Historical Performance Modal -->
-    <div id="studentDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg mx-4 overflow-hidden">
-            <div class="px-6 py-4 bg-indigo-950 text-white flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-indigo-800 text-amber-300 flex items-center justify-center font-bold text-sm">
-                        <i class="fa-solid fa-user-graduate"></i>
-                    </span>
-                    <div>
-                        <h3 class="font-bold text-base" id="detailModalStudentName">學生歷次表現</h3>
-                        <p class="text-xs text-indigo-200" id="detailModalStudentClass">班級：--</p>
-                    </div>
-                </div>
-                <button onclick="closeStudentDetailModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">×</button>
-            </div>
-
-            <div class="p-6 space-y-4">
-                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> 歷次模擬考成績記錄
-                </h4>
-
-                <div class="border border-slate-200 rounded-xl overflow-hidden">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                                <th class="py-2.5 px-3">考次名稱</th>
-                                <th class="py-2.5 px-3 text-center">總積分</th>
-                                <th class="py-2.5 px-3 text-center">總積點</th>
-                                <th class="py-2.5 px-3 text-center">作文級分</th>
-                                <th class="py-2.5 px-3 text-center">與上次相比</th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailModalHistoryBody" class="divide-y divide-slate-100">
-                            <!-- Populated dynamically via JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="detailSingleExamNotice" class="hidden bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 text-xs flex items-center gap-2">
-                    <i class="fa-solid fa-circle-info text-amber-600 text-base"></i>
-                    <span>目前系統僅有 1 次模擬考資料。匯入第 2 次後即可自動生成個人積點成長趨勢曲線！</span>
-                </div>
-
-                <div class="flex justify-end pt-2 border-t border-slate-100">
-                    <button type="button" onclick="closeStudentDetailModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs shadow-sm">
-                        關閉
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Import Mock Exam Modal -->
     <div id="importModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl mx-4 overflow-hidden">
-            <div class="px-6 py-4 bg-indigo-950 text-white flex justify-between items-center">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center">
                 <h3 class="font-bold text-lg flex items-center gap-2">
                     <i class="fa-solid fa-file-import text-amber-400"></i> 匯入後續模擬考資料
                 </h3>
@@ -592,23 +483,23 @@
                 <!-- Exam Name Input -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">模擬考名稱 / 考次標題</label>
-                    <input type="text" id="inputExamTitle" placeholder="例如: 第 2 次學習成就評量 (5A)" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
+                    <input type="text" id="inputExamTitle" placeholder="例如: 第 2 次學習成就評量 (5A)" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-medium">
                 </div>
 
                 <!-- Input Methods Tab -->
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-2">資料匯入方式</label>
                     <div class="grid grid-cols-2 gap-3 mb-3">
-                        <button type="button" onclick="switchImportTab('csv')" id="tabBtnCsv" class="py-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2">
+                        <button type="button" onclick="switchImportTab('csv')" id="tabBtnCsv" class="py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-file-csv"></i> CSV 檔案上傳
                         </button>
-                        <button type="button" onclick="switchImportTab('text')" id="tabBtnText" class="py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2">
+                        <button type="button" onclick="switchImportTab('text')" id="tabBtnText" class="py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-paste"></i> 貼上文本 / Excel
                         </button>
                     </div>
 
                     <!-- File Upload Input Area -->
-                    <div id="areaImportCsv" class="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-indigo-400 bg-slate-50 transition">
+                    <div id="areaImportCsv" class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-indigo-400 bg-slate-50 transition">
                         <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-500 mb-2"></i>
                         <p class="text-sm font-semibold text-slate-700">點擊選擇 CSV 檔案 或 拖曳檔案至此</p>
                         <p class="text-xs text-slate-400 mt-1">格式需求：編號, 班級, 姓名, 總積分, 總積點, 作文級分</p>
@@ -631,8 +522,8 @@
                         <i class="fa-solid fa-wand-magic-sparkles"></i> 載入測試範例數據 (第2次模擬考)
                     </button>
                     <div class="flex gap-2">
-                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">取消</button>
-                        <button type="button" onclick="processImportData()" class="px-5 py-2 bg-indigo-950 hover:bg-indigo-900 text-white font-bold rounded-xl text-xs shadow-md transition">
+                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                        <button type="button" onclick="processImportData()" class="px-5 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-bold rounded-lg text-sm shadow-md transition">
                             確認匯入並分析
                         </button>
                     </div>
@@ -643,8 +534,8 @@
 
     <!-- Add/Edit Student Modal -->
     <div id="studentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
-            <div class="px-6 py-4 bg-indigo-950 text-white flex justify-between items-center">
+        <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center">
                 <h3 id="modalTitle" class="font-bold text-lg">新增學生成績</h3>
                 <button onclick="closeModal()" class="text-indigo-200 hover:text-white text-xl">×</button>
             </div>
@@ -652,57 +543,141 @@
                 <input type="hidden" id="editIndex" value="-1">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">編號</label>
-                    <input type="number" id="inputID" required min="1" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="number" id="inputID" required min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">班級 (例如: 301)</label>
-                    <input type="text" id="inputClass" required placeholder="301" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="text" id="inputClass" required placeholder="301" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">姓名</label>
-                    <input type="text" id="inputName" required placeholder="張小明" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="text" id="inputName" required placeholder="張小明" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">總積分</label>
-                        <input type="number" id="inputScore" value="30" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-xl text-sm text-slate-600 outline-none font-bold">
+                        <input type="number" id="inputScore" value="30" readonly class="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-lg text-sm text-slate-600 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">總積點 (0-35)</label>
-                        <input type="number" id="inputCredits" required min="0" max="35" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
+                        <input type="number" id="inputCredits" required min="0" max="35" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">作文級分 (0-6)</label>
-                        <input type="number" id="inputEssay" required min="0" max="6" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
+                        <input type="number" id="inputEssay" required min="0" max="6" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
                 </div>
-                <div class="pt-4 flex justify-end gap-2 border-t border-slate-100">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">取消</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md">儲存成績</button>
+                <div class="pt-4 flex justify-end gap-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow-sm">儲存</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm mx-4 overflow-hidden">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-amber-400"></i> 管理者登入
+                </h3>
+                <button onclick="closeAdminLoginModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">×</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-600">請輸入管理密碼</p>
+                <div class="relative">
+                    <input type="password" id="adminPasswordInput" onkeydown="handleAdminPasswordKeydown(event)" placeholder="管理密碼" class="w-full px-3.5 py-2.5 pr-11 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <button type="button" onclick="toggleAdminPasswordVisibility()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <i id="adminPwToggleIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    <i class="fa-solid fa-circle-info"></i> 此密碼僅用於防止一般瀏覽者誤修改資料，屬於前端管理模式鎖定，並非正式帳號資安機制。
+                </p>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeAdminLoginModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                    <button type="button" onclick="attemptAdminLogin()" class="px-5 py-2 bg-indigo-900 hover:bg-indigo-800 text-white font-bold rounded-lg text-sm shadow-md transition">登入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Confirmation Modal -->
+    <div id="restoreConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 overflow-hidden">
+            <div class="px-6 py-4 bg-rose-600 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 確定要還原資料嗎？
+                </h3>
+                <button onclick="closeRestoreConfirmModal()" class="text-rose-100 hover:text-white text-2xl font-bold">×</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-600">目前資料將被備份檔案取代，此動作無法復原。</p>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeRestoreConfirmModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 font-medium">取消</button>
+                    <button type="button" onclick="confirmRestore()" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-sm shadow-md transition">確認還原</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Detail Modal (歷次表現) -->
+    <div id="studentDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl mx-auto overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-indigo-900 text-white flex justify-between items-center shrink-0">
+                <div>
+                    <h3 id="detailStudentName" class="font-bold text-lg">學生姓名</h3>
+                    <p id="detailStudentClass" class="text-xs text-indigo-200">班級</p>
+                </div>
+                <button onclick="closeStudentDetailModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">×</button>
+            </div>
+            <div class="p-6 space-y-5 overflow-y-auto">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-list-check text-indigo-600"></i> 歷次考次成績</h4>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 text-xs font-bold border-b border-slate-200">
+                                    <th class="py-2.5 px-3">考次</th>
+                                    <th class="py-2.5 px-3 text-center">總積點</th>
+                                    <th class="py-2.5 px-3 text-center">作文級分</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p id="detailSingleNotice" class="hidden text-sm text-slate-400 bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                    <i class="fa-solid fa-circle-info mr-1"></i> 目前只有 1 次模擬考資料
+                </p>
+
+                <div id="detailChartsWrap" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-arrow-trend-up text-indigo-600"></i> 積點趨勢</h4>
+                        <div class="h-44 relative"><canvas id="detailCreditsChart"></canvas></div>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-pen-nib text-amber-600"></i> 作文級分趨勢</h4>
+                        <div class="h-44 relative"><canvas id="detailEssayChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 flex justify-end shrink-0">
+                <button onclick="closeStudentDetailModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl text-sm flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50 border border-slate-700">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
-        <span id="toastMsg" class="font-medium">操作成功</span>
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">操作成功</span>
     </div>
 
     <script>
-        // System Config & State
-        const STORAGE_KEY = 'ymjh_5a_exam_data_v2';
-        const ADMIN_CONFIG = {
-            password: 'admin',
-            sessionKey: 'ymjh_5a_admin_session'
-        };
-
-        let isAdminMode = false;
-        let currentViewMode = 'card'; // 'card' or 'table'
-        let currentQuickFilter = 'ALL';
-
-        // Raw Initial Student Data (Exam 1 - 138 students)
+        // Full raw dataset parsed from the PDF document (Exam 1 - 138 students)
         const initialDataExam1 = [
             [1, "301", "陳芳禹", 30, 35, 6],
             [2, "309", "彭昱笙", 30, 35, 5],
@@ -844,6 +819,7 @@
             [138, "333", "王冠凱", 30, 26, 4]
         ];
 
+        // Format to array of student objects
         function parseRawToObjects(arr) {
             return arr.map(item => ({
                 id: item[0],
@@ -855,67 +831,130 @@
             }));
         }
 
-        // Initialize exams from localStorage or defaults
-        let exams = loadExamsFromStorage();
-        let currentExamId = exams[0] ? exams[0].id : "exam_1";
+        // Global State for Mock Exams
+        let exams = [
+            {
+                id: "exam_1",
+                examNo: 1,
+                title: "第 1 次學習成就評量 (5A)",
+                date: "2026-09",
+                students: parseRawToObjects(initialDataExam1)
+            }
+        ];
+
+        let currentExamId = "exam_1";
         let filteredStudents = [];
         let currentSortColumn = 'id';
         let currentSortAsc = true;
         let isShowComparison = true;
+        let currentViewMode = 'card';       // 'card' | 'table' - student list display mode
+        let currentQuickFilter = 'ALL';     // ALL | FULL35 | ESSAY6 | IMPROVED | DECLINED
+
+        // ------------------------------------------------------------------
+        // v2.0 - Admin / Browse Permission System
+        // ------------------------------------------------------------------
+        // IMPORTANT: This is a purely front-end lock to prevent casual users
+        // from accidentally modifying data. It is NOT a real authentication /
+        // security system. The password below is centrally managed here so
+        // that it only needs to be changed in one place. If a real backend is
+        // introduced in the future, this should be replaced with a proper
+        // server-side authentication check.
+        const ADMIN_CONFIG = {
+            password: 'ymjh5A2026',
+            sessionKey: 'ymjh_5a_admin_session'
+        };
+        let isAdminMode = false; // Always resets to browse mode on page reload
+
+        // localStorage persistence
+        const STORAGE_KEY = 'ymjh_5a_exam_data_v2';
 
         // Chart instances
         let essayChartInstance = null;
         let classChartInstance = null;
         let trendChartInstance = null;
         let essayCompareChartInstance = null;
+        let detailCreditsChart = null;
+        let detailEssayChart = null;
 
-        // Initialization
+        // On DOM Loaded
         window.onload = function() {
-            renderExamSelector();
-            updateActiveExamData();
-            initCharts();
-            renderComparisonDashboard();
-            updateUIForAuthMode();
+            try {
+                const loadedFromStorage = loadFromStorage();
+                renderExamSelector();
+                updateActiveExamData();
+                initCharts();
+                updateSingleExamCharts();
+                renderComparisonDashboard();
+                updatePermissionUI();
+                if (!loadedFromStorage) {
+                    saveToStorage(); // Step 27: establish localStorage on first run
+                }
+            } catch (error) {
+                console.error('5A 系統初始化失敗：', error);
+                showToast('系統初始化發生錯誤，請開啟瀏覽器主控台查看詳細訊息', 'fa-triangle-exclamation', 'text-rose-400');
+            }
         };
 
-        // Storage Operations
-        function loadExamsFromStorage() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
-                    }
-                } catch(e) {
-                    console.error('解析 localStorage 資料失敗', e);
-                }
-            }
-            const defaultExams = [
-                {
-                    id: "exam_1",
-                    examNo: 1,
-                    title: "第 1 次學習成就評量 (5A)",
-                    date: "2026-09",
-                    students: parseRawToObjects(initialDataExam1)
-                }
-            ];
-            saveExamsToStorage(defaultExams);
-            return defaultExams;
-        }
-
-        function saveExamsToStorage(data) {
+        // ==================================================================
+        // localStorage persistence (Step 5 / 25-30)
+        // ==================================================================
+        function saveToStorage() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data || exams));
-            } catch(e) {
-                console.error('無法儲存至 localStorage', e);
+                const payload = { version: 2, exams: exams, currentExamId: currentExamId };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.error('localStorage 保存失敗:', e);
+                showToast('資料保存失敗，瀏覽器儲存空間可能已滿', 'fa-triangle-exclamation', 'text-rose-400');
             }
         }
 
-        // Permission Control Functions
-        function checkAdminPermission() {
+        function loadFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (data && Array.isArray(data.exams) && data.exams.length > 0) {
+                    exams = data.exams;
+                    // Backfill examNo for any legacy records missing it (never touches score data)
+                    exams.forEach((ex, idx) => {
+                        if (typeof ex.examNo !== 'number') ex.examNo = idx + 1;
+                    });
+                    currentExamId = (data.currentExamId && exams.some(e => e.id === data.currentExamId))
+                        ? data.currentExamId
+                        : exams[0].id;
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error('localStorage 讀取失敗，改用內建初始資料:', e);
+                return false;
+            }
+        }
+
+        // ==================================================================
+        // Cross-exam ordering helpers (Step 32 bug fix: don't rely on array index)
+        // ==================================================================
+        function getSortedExams() {
+            return [...exams].sort((a, b) => (a.examNo || 0) - (b.examNo || 0));
+        }
+
+        function getPreviousExam(examId) {
+            const sorted = getSortedExams();
+            const idx = sorted.findIndex(e => e.id === examId);
+            return idx > 0 ? sorted[idx - 1] : null;
+        }
+
+        function getNextExamNo() {
+            if (exams.length === 0) return 1;
+            return Math.max(...exams.map(e => e.examNo || 0)) + 1;
+        }
+
+        // ==================================================================
+        // Permission System
+        // ==================================================================
+        function requireAdmin(actionLabel) {
             if (!isAdminMode) {
-                showToast("目前為瀏覽模式，無法修改資料！", "fa-lock", "text-amber-400");
+                showToast(actionLabel ? `目前為瀏覽模式，無法${actionLabel}` : '請先登入管理模式', 'fa-lock', 'text-amber-400');
                 return false;
             }
             return true;
@@ -923,70 +962,86 @@
 
         function openAdminLoginModal() {
             document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminPasswordInput').type = 'password';
+            document.getElementById('adminPwToggleIcon').className = 'fa-solid fa-eye';
             document.getElementById('adminLoginModal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
+            setTimeout(() => {
+                const input = document.getElementById('adminPasswordInput');
+                if (input) input.focus();
+            }, 50);
         }
 
         function closeAdminLoginModal() {
             document.getElementById('adminLoginModal').classList.add('hidden');
         }
 
-        function togglePasswordVisibility() {
-            const pwdInput = document.getElementById('adminPasswordInput');
-            const eyeIcon = document.getElementById('pwdEyeIcon');
-            if (pwdInput.type === 'password') {
-                pwdInput.type = 'text';
-                eyeIcon.className = 'fa-solid fa-eye-slash';
+        function toggleAdminPasswordVisibility() {
+            const input = document.getElementById('adminPasswordInput');
+            const icon = document.getElementById('adminPwToggleIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
             } else {
-                pwdInput.type = 'password';
-                eyeIcon.className = 'fa-solid fa-eye';
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
             }
         }
 
-        function handleAdminLogin(e) {
-            if (e) e.preventDefault();
-            const pwd = document.getElementById('adminPasswordInput').value;
-            if (pwd === ADMIN_CONFIG.password) {
+        function handleAdminPasswordKeydown(evt) {
+            if (evt.key === 'Enter') {
+                evt.preventDefault();
+                attemptAdminLogin();
+            }
+        }
+
+        function attemptAdminLogin() {
+            const val = document.getElementById('adminPasswordInput').value;
+            if (val === ADMIN_CONFIG.password) {
                 isAdminMode = true;
                 closeAdminLoginModal();
-                updateUIForAuthMode();
-                showToast("已成功進入管理模式！", "fa-unlock", "text-emerald-400");
+                updatePermissionUI();
+                showToast('已成功登入管理模式，現在可以編輯資料', 'fa-unlock', 'text-emerald-400');
             } else {
-                alert("管理密碼不正確！");
+                showToast('密碼錯誤，請再試一次', 'fa-circle-exclamation', 'text-rose-400');
             }
         }
 
-        function handleAdminLogout() {
+        function logoutAdmin() {
             isAdminMode = false;
             closeModal();
             closeImportModal();
-            updateUIForAuthMode();
-            showToast("已登出管理模式，恢復瀏覽權限", "fa-lock", "text-indigo-400");
+            closeAdminLoginModal();
+            closeRestoreConfirmModal();
+            closeStudentDetailModal();
+            updatePermissionUI();
+            showToast('已登出管理模式', 'fa-lock', 'text-slate-300');
         }
 
-        function updateUIForAuthMode() {
-            const browseBadge = document.getElementById('browseModeBadge');
-            const adminBadge = document.getElementById('adminModeBadge');
-            const adminActions = document.querySelectorAll('.admin-only');
-
-            if (isAdminMode) {
-                browseBadge.classList.add('hidden');
-                adminBadge.classList.remove('hidden');
-                adminActions.forEach(el => el.classList.remove('hidden'));
+        function handleAdminNavClick(evt) {
+            evt.preventDefault();
+            if (!isAdminMode) {
+                openAdminLoginModal();
             } else {
-                browseBadge.classList.remove('hidden');
-                adminBadge.classList.add('hidden');
-                adminActions.forEach(el => el.classList.add('hidden'));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-
-            renderStudentsView();
         }
 
-        // Exam Switcher Functions
+        function updatePermissionUI() {
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.classList.toggle('is-hidden', !isAdminMode);
+            });
+            document.getElementById('modeIndicatorBrowse').classList.toggle('hidden', isAdminMode);
+            document.getElementById('modeIndicatorAdmin').classList.toggle('hidden', !isAdminMode);
+            // Re-render lists so action buttons (edit/delete) reflect current permission
+            renderTable();
+            renderCards();
+        }
+
+        // Render Exam Selector Options
         function renderExamSelector() {
             const selector = document.getElementById('examSelector');
             selector.innerHTML = '';
-            exams.forEach((ex) => {
+            getSortedExams().forEach((ex) => {
                 const opt = document.createElement('option');
                 opt.value = ex.id;
                 opt.textContent = ex.title;
@@ -997,9 +1052,11 @@
             document.getElementById('examCountBadge').textContent = `已載入 ${exams.length} 次模擬考數據`;
         }
 
+        // Switch Active Exam View
         function switchExam(examId) {
             currentExamId = examId;
             updateActiveExamData();
+            saveToStorage();
         }
 
         function getCurrentExam() {
@@ -1009,17 +1066,17 @@
         function updateActiveExamData() {
             const activeExam = getCurrentExam();
             document.getElementById('activeExamTitle').textContent = activeExam.title;
-            document.getElementById('activeExamDate').textContent = activeExam.date || '2026-09';
-            document.getElementById('activeExamSubtitle').textContent = `包含 ${activeExam.students.length} 名進入 5A 榜單學生之積點與作文分數`;
-            document.getElementById('labelEssayChart').textContent = `${activeExam.title} - 作文級分分佈`;
-            document.getElementById('tableHeaderTitle').textContent = `${activeExam.title} 成績明細表`;
+            document.getElementById('activeExamSubtitle').textContent = `共 ${activeExam.students.length} 名學生進入 5A 榜單`;
+            document.getElementById('labelEssayChart').textContent = `${activeExam.title} - 作文級分分佈（全體）`;
+            document.getElementById('tableHeaderTitle').textContent = `${activeExam.title} 成績明細`;
 
             populateClassFilterOptions();
-            updateGlobalKPIs();
-            applyFilters();
+            updateGlobalKPIs();   // 全局統計：永遠使用 activeExam.students，不受篩選影響
+            applyFilters();       // 篩選結果：使用 filteredStudents
             renderComparisonDashboard();
         }
 
+        // Populate Class Filter Dropdown
         function populateClassFilterOptions() {
             const activeExam = getCurrentExam();
             const classes = [...new Set(activeExam.students.map(s => s.classNum))].sort();
@@ -1041,103 +1098,31 @@
             }
         }
 
-        // Global KPI calculation (ALWAYS calculated from full activeExam.students)
-        function updateGlobalKPIs() {
-            const activeExam = getCurrentExam();
-            const students = activeExam.students;
-            const totalCount = students.length;
-
-            document.getElementById('kpi-total-count').innerHTML = `${totalCount} <span class="text-sm font-normal text-slate-500">人</span>`;
-
-            // Comparison with previous exam based on exam sequence
-            const currentIndex = exams.findIndex(e => e.id === currentExamId);
-            const prevExam = currentIndex > 0 ? exams[currentIndex - 1] : null;
-
+        // Build a lookup map of the previous exam's students, keyed by name+class
+        // Used for both the progress table and the quick filter chips (進步/下降)
+        function getPrevStudentMap(activeExam) {
+            const prevExam = getPreviousExam(activeExam.id);
+            const map = new Map();
             if (prevExam) {
-                const prevCount = prevExam.students.length;
-                const diffCount = totalCount - prevCount;
-                const signCount = diffCount >= 0 ? '+' : '';
-                const colorCount = diffCount >= 0 ? 'text-emerald-600' : 'text-rose-600';
-                document.getElementById('kpi-diff-count').className = `text-xs font-bold ${colorCount}`;
-                document.getElementById('kpi-diff-count').textContent = `較前次: ${signCount}${diffCount} 人`;
-            } else {
-                document.getElementById('kpi-diff-count').className = 'text-xs text-indigo-600 font-semibold';
-                document.getElementById('kpi-diff-count').textContent = '全校 5A 精英團隊';
+                prevExam.students.forEach(p => map.set(`${p.name}_${p.classNum}`, p));
             }
-
-            if (totalCount === 0) {
-                document.getElementById('kpi-avg-credits').innerHTML = `0 <span class="text-sm font-normal text-slate-500">點</span>`;
-                document.getElementById('kpi-essay-6').innerHTML = `0 <span class="text-sm font-normal text-slate-500">人</span>`;
-                document.getElementById('kpi-essay-6-pct').textContent = `佔比 0%`;
-                document.getElementById('kpi-top-class').innerHTML = `-- <span class="text-sm font-normal text-slate-500">班</span>`;
-                document.getElementById('kpi-top-class-count').textContent = `0 人進榜`;
-                return;
-            }
-
-            // Avg Total Credits
-            const totalCreditsSum = students.reduce((acc, s) => acc + s.credits, 0);
-            const avgCredits = (totalCreditsSum / totalCount).toFixed(2);
-            document.getElementById('kpi-avg-credits').innerHTML = `${avgCredits} <span class="text-sm font-normal text-slate-500">點</span>`;
-
-            if (prevExam && prevExam.students.length > 0) {
-                const prevAvg = (prevExam.students.reduce((acc, s) => acc + s.credits, 0) / prevExam.students.length).toFixed(2);
-                const diffAvg = (avgCredits - prevAvg).toFixed(2);
-                const signAvg = diffAvg >= 0 ? '+' : '';
-                const colorAvg = diffAvg >= 0 ? 'text-emerald-600' : 'text-rose-600';
-                document.getElementById('kpi-diff-credits').className = `text-xs font-bold ${colorAvg}`;
-                document.getElementById('kpi-diff-credits').textContent = `較前次: ${signAvg}${diffAvg} 點`;
-            } else {
-                const maxCredits = Math.max(...students.map(s => s.credits));
-                document.getElementById('kpi-diff-credits').className = 'text-xs text-emerald-600 font-semibold';
-                document.getElementById('kpi-diff-credits').textContent = `榜首積點: ${maxCredits} 點`;
-            }
-
-            // Essay 6 Count & Percentage
-            const essay6Count = students.filter(s => s.essay === 6).length;
-            const essay6Pct = ((essay6Count / totalCount) * 100).toFixed(1);
-            document.getElementById('kpi-essay-6').innerHTML = `${essay6Count} <span class="text-sm font-normal text-slate-500">人</span>`;
-            document.getElementById('kpi-essay-6-pct').textContent = `佔比 ${essay6Pct}%`;
-
-            // Top Class
-            const classCounts = {};
-            students.forEach(s => {
-                classCounts[s.classNum] = (classCounts[s.classNum] || 0) + 1;
-            });
-            let topClass = '--';
-            let topCount = 0;
-            for (const [cls, cnt] of Object.entries(classCounts)) {
-                if (cnt > topCount) {
-                    topCount = cnt;
-                    topClass = cls;
-                }
-            }
-            document.getElementById('kpi-top-class').innerHTML = `${topClass} <span class="text-sm font-normal text-slate-500">班</span>`;
-            document.getElementById('kpi-top-class-count').textContent = `${topCount} 人進榜`;
+            return map;
         }
 
-        // Filtering and Searching
+        // Apply Search and Filters for Active Exam
         function applyFilters() {
             const activeExam = getCurrentExam();
             const searchText = document.getElementById('searchInput').value.trim().toLowerCase();
             const selectedClass = document.getElementById('classFilter').value;
             const selectedEssay = document.getElementById('essayFilter').value;
             const selectedCredits = document.getElementById('creditsFilter').value;
-
-            // Determine previous exam map for progress filters
-            const currentIndex = exams.findIndex(e => e.id === currentExamId);
-            const prevExam = currentIndex > 0 ? exams[currentIndex - 1] : null;
-            const prevMap = new Map();
-            if (prevExam) {
-                prevExam.students.forEach(s => prevMap.set(`${s.name}_${s.classNum}`, s));
-            }
+            const prevMap = getPrevStudentMap(activeExam);
 
             filteredStudents = activeExam.students.filter(s => {
-                // Search match
                 const matchSearch = s.name.toLowerCase().includes(searchText) || 
                                     s.classNum.includes(searchText) || 
                                     s.id.toString().includes(searchText);
                 
-                // Dropdown match
                 const matchClass = (selectedClass === 'ALL' || s.classNum === selectedClass);
                 const matchEssay = (selectedEssay === 'ALL' || s.essay.toString() === selectedEssay);
 
@@ -1150,53 +1135,32 @@
                     }
                 }
 
-                // Quick filter chips match
+                // Quick filter chips (Step 22) - must be compatible with the select filters above,
+                // not a separate conflicting filter system.
                 let matchQuick = true;
-                if (currentQuickFilter === 'FULL_POINTS') {
+                if (currentQuickFilter === 'FULL35') {
                     matchQuick = s.credits === 35;
-                } else if (currentQuickFilter === 'ESSAY_6') {
+                } else if (currentQuickFilter === 'ESSAY6') {
                     matchQuick = s.essay === 6;
-                } else if (currentQuickFilter === 'PROGRESS') {
-                    const prevS = prevMap.get(`${s.name}_${s.classNum}`);
-                    matchQuick = prevS ? s.credits > prevS.credits : false;
-                } else if (currentQuickFilter === 'REGRESS') {
-                    const prevS = prevMap.get(`${s.name}_${s.classNum}`);
-                    matchQuick = prevS ? s.credits < prevS.credits : false;
+                } else if (currentQuickFilter === 'IMPROVED') {
+                    const prev = prevMap.get(`${s.name}_${s.classNum}`);
+                    matchQuick = !!prev && s.credits > prev.credits;
+                } else if (currentQuickFilter === 'DECLINED') {
+                    const prev = prevMap.get(`${s.name}_${s.classNum}`);
+                    matchQuick = !!prev && s.credits < prev.credits;
                 }
 
                 return matchSearch && matchClass && matchEssay && matchCredits && matchQuick;
             });
 
             sortData(currentSortColumn, false);
-            updateFilterSummaryBanner(activeExam.students.length);
-            renderStudentsView();
+            renderTable();
+            renderCards();
+            updateFilterSummary();     // 篩選結果統計，與全局 KPI 分離
             updateSingleExamCharts();
         }
 
-        function setQuickFilter(type) {
-            currentQuickFilter = type;
-            
-            const btnMap = {
-                'ALL': 'chip-all',
-                'FULL_POINTS': 'chip-35',
-                'ESSAY_6': 'chip-essay6',
-                'PROGRESS': 'chip-progress',
-                'REGRESS': 'chip-regress'
-            };
-
-            Object.entries(btnMap).forEach(([key, id]) => {
-                const btn = document.getElementById(id);
-                if (!btn) return;
-                if (key === type) {
-                    btn.className = "px-3 py-1 rounded-full text-xs font-semibold transition border border-indigo-600 bg-indigo-600 text-white shadow-sm";
-                } else {
-                    btn.className = "px-3 py-1 rounded-full text-xs font-semibold transition border border-slate-200 bg-white text-slate-600 hover:bg-slate-100";
-                }
-            });
-
-            applyFilters();
-        }
-
+        // Reset Filters
         function resetFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('classFilter').value = 'ALL';
@@ -1205,161 +1169,55 @@
             setQuickFilter('ALL');
         }
 
-        function updateFilterSummaryBanner(totalActiveCount) {
-            const summaryText = document.getElementById('filterSummaryText');
-            const summarySub = document.getElementById('filterSummarySub');
-            const count = filteredStudents.length;
-
-            summaryText.textContent = `🔍 目前篩選結果：共 ${count} 筆符合條件資料（總學生數 ${totalActiveCount} 人）`;
-            if (count === totalActiveCount) {
-                summarySub.textContent = `顯示全校當前考次所有榜單學生`;
-            } else {
-                summarySub.textContent = `已套用搜尋或條件過濾`;
+        // ==================================================================
+        // Quick Filter Chips (Step 22)
+        // ==================================================================
+        function quickFilterLabel(qf) {
+            switch (qf) {
+                case 'FULL35': return '⭐ 35點滿點';
+                case 'ESSAY6': return '📝 作文6級分';
+                case 'IMPROVED': return '📈 積點進步';
+                case 'DECLINED': return '⚠️ 積點下降';
+                default: return '';
             }
         }
 
-        // Switch View Modes: Cards vs Table
-        function switchViewMode(mode) {
+        function setQuickFilter(qf) {
+            currentQuickFilter = qf;
+            document.querySelectorAll('.quick-filter-chip').forEach(el => {
+                if (el.dataset.qf === qf) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+            applyFilters();
+        }
+
+        // ==================================================================
+        // Card / Table View Toggle (Step 17-21)
+        // ==================================================================
+        function setViewMode(mode) {
             currentViewMode = mode;
+            const cardContainer = document.getElementById('cardViewContainer');
+            const tableContainer = document.getElementById('tableViewContainer');
             const btnCard = document.getElementById('btnViewCard');
             const btnTable = document.getElementById('btnViewTable');
-            const cardContainer = document.getElementById('studentCardContainer');
-            const tableContainer = document.getElementById('studentTableContainer');
 
             if (mode === 'card') {
-                btnCard.className = "px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm";
-                btnTable.className = "px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-200";
                 cardContainer.classList.remove('hidden');
                 tableContainer.classList.add('hidden');
+                btnCard.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-white text-indigo-700 shadow-sm';
+                btnTable.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-500';
             } else {
-                btnTable.className = "px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm";
-                btnCard.className = "px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-slate-600 hover:bg-slate-200";
-                tableContainer.classList.remove('hidden');
                 cardContainer.classList.add('hidden');
-            }
-            renderStudentsView();
-        }
-
-        function renderStudentsView() {
-            if (currentViewMode === 'card') {
-                renderStudentCards();
-            } else {
-                renderStudentTable();
+                tableContainer.classList.remove('hidden');
+                btnTable.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition bg-white text-indigo-700 shadow-sm';
+                btnCard.className = 'flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-semibold transition text-slate-500';
             }
         }
 
-        // Render Cards View
-        function renderStudentCards() {
-            const container = document.getElementById('studentCardContainer');
-            
-            if (filteredStudents.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full bg-white rounded-2xl p-12 text-center text-slate-400 border border-slate-200">
-                        <i class="fa-solid fa-user-slash text-4xl mb-3 block text-slate-300"></i>
-                        <p class="font-bold text-base text-slate-600">無符合目前篩選條件的學生資料</p>
-                        <p class="text-xs text-slate-400 mt-1">請嘗試重置搜尋關鍵字或彈性調整篩選標準</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Find previous exam student mapping for progress indicators
-            const currentIndex = exams.findIndex(e => e.id === currentExamId);
-            const prevExam = currentIndex > 0 ? exams[currentIndex - 1] : null;
-            const prevMap = new Map();
-            if (prevExam) {
-                prevExam.students.forEach(s => prevMap.set(`${s.name}_${s.classNum}`, s));
-            }
-
-            let html = '';
-            filteredStudents.forEach((s) => {
-                const prevStudent = prevMap.get(`${s.name}_${s.classNum}`);
-                let progressBadge = '';
-
-                if (prevStudent) {
-                    const diff = s.credits - prevStudent.credits;
-                    if (diff > 0) {
-                        progressBadge = `<span class="bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 px-2 py-0.5 rounded-md text-xs">↑ 積點 +${diff}</span>`;
-                    } else if (diff < 0) {
-                        progressBadge = `<span class="bg-rose-50 text-rose-700 font-bold border border-rose-200 px-2 py-0.5 rounded-md text-xs">↓ 積點 ${diff}</span>`;
-                    } else {
-                        progressBadge = `<span class="bg-slate-100 text-slate-600 font-medium px-2 py-0.5 rounded-md text-xs">→ 積點持平</span>`;
-                    }
-                } else if (exams.length > 1) {
-                    progressBadge = `<span class="bg-purple-50 text-purple-700 font-bold border border-purple-200 px-2 py-0.5 rounded-md text-xs">✨ 首度進榜</span>`;
-                }
-
-                let essayBadgeClass = 'bg-slate-100 text-slate-700';
-                if (s.essay === 6) essayBadgeClass = 'bg-amber-100 text-amber-900 border border-amber-300 font-bold';
-                else if (s.essay === 5) essayBadgeClass = 'bg-blue-100 text-blue-900 font-semibold';
-                else if (s.essay === 4) essayBadgeClass = 'bg-emerald-100 text-emerald-900';
-
-                let creditColor = 'text-slate-800';
-                if (s.credits === 35) creditColor = 'text-purple-700 font-black';
-                else if (s.credits >= 33) creditColor = 'text-indigo-700 font-bold';
-
-                // Action buttons according to mode
-                let actionsHtml = '';
-                if (isAdminMode) {
-                    actionsHtml = `
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-1">
-                            <button onclick="openStudentDetailModal('${s.name}', '${s.classNum}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-semibold transition flex items-center gap-1">
-                                <i class="fa-solid fa-chart-line text-purple-600"></i> 歷次
-                            </button>
-                            <div class="flex items-center gap-1">
-                                <button onclick="openEditModal(${s.id})" title="編輯" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button onclick="deleteStudent(${s.id})" title="刪除" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    actionsHtml = `
-                        <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end">
-                            <button onclick="openStudentDetailModal('${s.name}', '${s.classNum}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1 w-full justify-center">
-                                <i class="fa-solid fa-chart-line"></i> 查看歷次表現
-                            </button>
-                        </div>
-                    `;
-                }
-
-                html += `
-                    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-md border border-slate-200">
-                                    ${s.classNum} 班
-                                </span>
-                                <span class="text-xs font-mono text-slate-400">#${s.id}</span>
-                            </div>
-
-                            <h4 class="text-lg font-extrabold text-slate-900 tracking-tight">${s.name}</h4>
-
-                            <div class="mt-3 bg-slate-50 rounded-xl p-2.5 border border-slate-100 flex items-center justify-between">
-                                <div>
-                                    <span class="text-[10px] text-slate-400 font-bold uppercase block">積分 / 積點</span>
-                                    <span class="text-base ${creditColor}">${s.score}分 / <strong class="text-lg">${s.credits}</strong>點</span>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-lg text-xs ${essayBadgeClass}">
-                                    📝 作文 ${s.essay} 級分
-                                </span>
-                            </div>
-
-                            ${progressBadge ? `<div class="mt-2.5">${progressBadge}</div>` : ''}
-                        </div>
-
-                        ${actionsHtml}
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // Sorting
+        // Sort Data
         function sortTable(column) {
             if (currentSortColumn === column) {
                 currentSortAsc = !currentSortAsc;
@@ -1396,12 +1254,12 @@
             });
 
             if (isUserClick) {
-                renderStudentsView();
+                renderTable();
             }
         }
 
-        // Render Table View
-        function renderStudentTable() {
+        // Render Table Rows
+        function renderTable() {
             const tbody = document.getElementById('dataTableBody');
             const badge = document.getElementById('recordCountBadge');
             badge.textContent = `${filteredStudents.length} 筆資料`;
@@ -1421,36 +1279,13 @@
             let html = '';
             filteredStudents.forEach((s) => {
                 let essayBadgeClass = 'bg-slate-100 text-slate-700';
-                if (s.essay === 6) essayBadgeClass = 'bg-amber-100 text-amber-900 font-bold border border-amber-300';
-                else if (s.essay === 5) essayBadgeClass = 'bg-blue-100 text-blue-900 font-semibold';
-                else if (s.essay === 4) essayBadgeClass = 'bg-emerald-100 text-emerald-900';
+                if (s.essay === 6) essayBadgeClass = 'bg-amber-100 text-amber-800 font-bold border border-amber-300';
+                else if (s.essay === 5) essayBadgeClass = 'bg-blue-100 text-blue-800 font-semibold';
+                else if (s.essay === 4) essayBadgeClass = 'bg-emerald-100 text-emerald-800';
 
                 let creditsBadgeClass = 'text-slate-700';
                 if (s.credits === 35) creditsBadgeClass = 'text-purple-700 font-extrabold bg-purple-50 px-2 py-0.5 rounded';
                 else if (s.credits >= 33) creditsBadgeClass = 'text-indigo-700 font-bold';
-
-                let actionsTd = '';
-                if (isAdminMode) {
-                    actionsTd = `
-                        <div class="flex items-center justify-center gap-1">
-                            <button onclick="openStudentDetailModal('${s.name}', '${s.classNum}')" title="歷次表現" class="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded transition">
-                                <i class="fa-solid fa-chart-line"></i>
-                            </button>
-                            <button onclick="openEditModal(${s.id})" title="編輯" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="deleteStudent(${s.id})" title="刪除" class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded transition">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    actionsTd = `
-                        <button onclick="openStudentDetailModal('${s.name}', '${s.classNum}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded font-bold transition">
-                            <i class="fa-solid fa-chart-line mr-1"></i> 查看歷次
-                        </button>
-                    `;
-                }
 
                 html += `
                     <tr class="hover:bg-indigo-50/50 transition border-b border-slate-100">
@@ -1463,13 +1298,226 @@
                             <span class="inline-block px-2.5 py-1 rounded-full text-xs ${essayBadgeClass}">${s.essay} 級分</span>
                         </td>
                         <td class="py-3 px-4 text-center">
-                            ${actionsTd}
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="openStudentDetail('${escapeJs(s.name)}', '${escapeJs(s.classNum)}')" title="查看歷次表現" class="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded transition">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </button>
+                                <button onclick="openEditModal(${s.id})" title="編輯" class="admin-only ${isAdminMode ? '' : 'is-hidden'} p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteStudent(${s.id})" title="刪除" class="admin-only ${isAdminMode ? '' : 'is-hidden'} p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
             });
 
             tbody.innerHTML = html;
+        }
+
+        // Simple helper to safely embed strings inside inline onclick=' ' JS string literals
+        function escapeJs(str) {
+            return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        // ==================================================================
+        // Student Card Rendering (Step 17-20)
+        // ==================================================================
+        function renderCards() {
+            const grid = document.getElementById('studentCardGrid');
+            if (!grid) return;
+
+            if (filteredStudents.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-folder-open text-4xl mb-2 block"></i>
+                        沒有符合條件的學生成績資料
+                    </div>
+                `;
+                return;
+            }
+
+            const activeExam = getCurrentExam();
+            const prevMap = getPrevStudentMap(activeExam);
+
+            let html = '';
+            filteredStudents.forEach(s => {
+                let essayBadgeClass = 'bg-slate-100 text-slate-700';
+                if (s.essay === 6) essayBadgeClass = 'bg-amber-100 text-amber-800 font-bold border border-amber-300';
+                else if (s.essay === 5) essayBadgeClass = 'bg-blue-100 text-blue-800 font-semibold';
+                else if (s.essay === 4) essayBadgeClass = 'bg-emerald-100 text-emerald-800';
+
+                let creditsClass = 'text-slate-800';
+                if (s.credits === 35) creditsClass = 'text-purple-700';
+                else if (s.credits >= 33) creditsClass = 'text-indigo-700';
+
+                // Cross-exam trend indicator vs previous exam (Step 18)
+                let trendHtml = '';
+                const prev = prevMap.get(`${s.name}_${s.classNum}`);
+                if (prev) {
+                    const creditsDiff = s.credits - prev.credits;
+                    const essayDiff = s.essay - prev.essay;
+                    let creditsTrend, creditsColor;
+                    if (creditsDiff > 0) { creditsTrend = `↑ 積點 +${creditsDiff}`; creditsColor = 'text-emerald-600'; }
+                    else if (creditsDiff < 0) { creditsTrend = `↓ 積點 ${creditsDiff}`; creditsColor = 'text-rose-600'; }
+                    else { creditsTrend = `→ 積點持平`; creditsColor = 'text-slate-500'; }
+
+                    let essayTrend = '';
+                    if (essayDiff > 0) essayTrend = `<span class="text-emerald-600">↑ 作文 +${essayDiff}</span>`;
+                    else if (essayDiff < 0) essayTrend = `<span class="text-rose-600">↓ 作文 ${essayDiff}</span>`;
+
+                    trendHtml = `
+                        <div class="flex items-center gap-2 text-[11px] font-semibold mt-1.5">
+                            <span class="${creditsColor}">${creditsTrend}</span>
+                            ${essayTrend}
+                        </div>
+                    `;
+                }
+
+                const actionsHtml = isAdminMode ? `
+                    <div class="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-slate-100">
+                        <button onclick="openStudentDetail('${escapeJs(s.name)}', '${escapeJs(s.classNum)}')" class="flex items-center justify-center gap-1 text-[11px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg py-1.5 transition">
+                            <i class="fa-solid fa-chart-line"></i> 查看
+                        </button>
+                        <button onclick="openEditModal(${s.id})" class="flex items-center justify-center gap-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg py-1.5 transition">
+                            <i class="fa-solid fa-pen-to-square"></i> 編輯
+                        </button>
+                        <button onclick="deleteStudent(${s.id})" class="flex items-center justify-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg py-1.5 transition">
+                            <i class="fa-solid fa-trash-can"></i> 刪除
+                        </button>
+                    </div>
+                ` : `
+                    <button onclick="openStudentDetail('${escapeJs(s.name)}', '${escapeJs(s.classNum)}')" class="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg py-2 mt-3 pt-3 transition border-t border-slate-100">
+                        <i class="fa-solid fa-chart-line"></i> 查看歷次表現
+                    </button>
+                `;
+
+                html += `
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition p-4 flex flex-col">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">${s.classNum} 班・編號 ${s.id}</p>
+                                <h3 class="text-lg font-extrabold text-slate-900 mt-0.5">${s.name}</h3>
+                            </div>
+                            <span class="inline-block px-2 py-1 rounded-full text-[11px] shrink-0 ${essayBadgeClass}">${s.essay === 6 ? '📝 ' : ''}作文 ${s.essay} 級分</span>
+                        </div>
+                        <div class="flex items-end gap-4 mt-3">
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-semibold">總積點</p>
+                                <p class="text-2xl font-extrabold ${creditsClass}">${s.credits} <span class="text-xs font-medium text-slate-400">點</span></p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] text-slate-400 font-semibold">總積分</p>
+                                <p class="text-base font-bold text-slate-600">${s.score} 分</p>
+                            </div>
+                        </div>
+                        ${trendHtml}
+                        ${actionsHtml}
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        // Update Global KPIs - ALWAYS from activeExam.students, never from filteredStudents (Step 14-15 bug fix)
+        function updateGlobalKPIs() {
+            const activeExam = getCurrentExam();
+            const students = activeExam.students;
+            const count = students.length;
+            // 修正：原程式直接使用未宣告的 prevExam，會造成 ReferenceError，
+            // 使整個初始化流程在此中斷。
+            const prevExam = getPreviousExam(activeExam.id);
+            document.getElementById('kpi-total-count').innerHTML = `${count} <span class="text-sm font-normal text-slate-500">人</span>`;
+
+            if (prevExam) {
+                const prevCount = prevExam.students.length;
+                const diffCount = count - prevCount;
+                const signCount = diffCount >= 0 ? '+' : '';
+                const colorCount = diffCount >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                document.getElementById('kpi-diff-count').className = `text-xs font-semibold ${colorCount} mt-1`;
+                document.getElementById('kpi-diff-count').textContent = `較前次: ${signCount}${diffCount} 人`;
+            } else {
+                document.getElementById('kpi-diff-count').className = 'text-xs text-indigo-600 font-medium mt-1';
+                document.getElementById('kpi-diff-count').textContent = '達成 5A 榜單精英';
+            }
+
+            if (count === 0) {
+                document.getElementById('kpi-avg-credits').innerHTML = `0 <span class="text-sm font-normal text-slate-500">點</span>`;
+                document.getElementById('kpi-essay-6').innerHTML = `0 <span class="text-sm font-normal text-slate-500">人</span>`;
+                document.getElementById('kpi-essay-6-pct').textContent = `佔比 0%`;
+                document.getElementById('kpi-top-class').innerHTML = `-- <span class="text-sm font-normal text-slate-500">班</span>`;
+                document.getElementById('kpi-top-class-count').textContent = `0 人進榜`;
+                return;
+            }
+
+            // Avg Credits
+            const totalCreditsSum = students.reduce((acc, s) => acc + s.credits, 0);
+            const avgCredits = (totalCreditsSum / count).toFixed(2);
+            document.getElementById('kpi-avg-credits').innerHTML = `${avgCredits} <span class="text-sm font-normal text-slate-500">點</span>`;
+
+            if (prevExam && prevExam.students.length > 0) {
+                const prevAvg = (prevExam.students.reduce((acc, s) => acc + s.credits, 0) / prevExam.students.length).toFixed(2);
+                const diffAvg = (avgCredits - prevAvg).toFixed(2);
+                const signAvg = diffAvg >= 0 ? '+' : '';
+                const colorAvg = diffAvg >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                document.getElementById('kpi-diff-credits').className = `text-xs font-semibold ${colorAvg} mt-1`;
+                document.getElementById('kpi-diff-credits').textContent = `較前次: ${signAvg}${diffAvg} 點`;
+            } else {
+                const maxCredits = Math.max(...students.map(s => s.credits));
+                document.getElementById('kpi-diff-credits').className = 'text-xs text-emerald-600 font-medium mt-1';
+                document.getElementById('kpi-diff-credits').textContent = `最高: ${maxCredits} 點`;
+            }
+
+            // Essay 6 Count
+            const essay6Count = students.filter(s => s.essay === 6).length;
+            const essay6Pct = ((essay6Count / count) * 100).toFixed(1);
+            document.getElementById('kpi-essay-6').innerHTML = `${essay6Count} <span class="text-sm font-normal text-slate-500">人</span>`;
+            document.getElementById('kpi-essay-6-pct').textContent = `佔比 ${essay6Pct}%`;
+
+            // Top Class
+            const classCounts = {};
+            students.forEach(s => {
+                classCounts[s.classNum] = (classCounts[s.classNum] || 0) + 1;
+            });
+            let topClass = '--';
+            let topCount = 0;
+            for (const [cls, cnt] of Object.entries(classCounts)) {
+                if (cnt > topCount) {
+                    topCount = cnt;
+                    topClass = cls;
+                }
+            }
+            document.getElementById('kpi-top-class').innerHTML = `${topClass} <span class="text-sm font-normal text-slate-500">班</span>`;
+            document.getElementById('kpi-top-class-count').textContent = `${topCount} 人進榜`;
+        }
+
+        // Update the "目前篩選結果" banner - ALWAYS from filteredStudents (Step 14-15 bug fix)
+        // This is kept fully separate from updateGlobalKPIs() so the KPI cards above never
+        // change meaning just because the user typed a search term or picked a class filter.
+        function updateFilterSummary() {
+            const activeExam = getCurrentExam();
+            const total = activeExam.students.length;
+            const count = filteredStudents.length;
+
+            const searchText = document.getElementById('searchInput').value.trim();
+            const selectedClass = document.getElementById('classFilter').value;
+            const selectedEssay = document.getElementById('essayFilter').value;
+            const selectedCredits = document.getElementById('creditsFilter').value;
+
+            const descParts = [];
+            if (searchText) descParts.push(`搜尋「${searchText}」`);
+            if (selectedClass !== 'ALL') descParts.push(`${selectedClass} 班`);
+            if (selectedEssay !== 'ALL') descParts.push(`作文 ${selectedEssay} 級分`);
+            if (selectedCredits !== 'ALL') descParts.push(selectedCredits === '29-less' ? '29 點以下' : `${selectedCredits} 點`);
+            if (currentQuickFilter !== 'ALL') descParts.push(quickFilterLabel(currentQuickFilter));
+
+            const textEl = document.getElementById('filterSummaryText');
+            const badgeEl = document.getElementById('filterSummaryCount');
+            textEl.textContent = descParts.length === 0 ? '目前顯示全部學生資料（未套用篩選）' : descParts.join('、') + '　→　找到';
+            badgeEl.textContent = `${count} / ${total} 人`;
         }
 
         // Initialize Charts
@@ -1582,16 +1630,21 @@
             });
         }
 
-        // Update Charts for Active Exam
+        // Update Charts for current exam
         function updateSingleExamCharts() {
             if (!essayChartInstance || !classChartInstance) return;
 
-            const essayCounts = [6, 5, 4, 3, 2].map(lvl => filteredStudents.filter(s => s.essay === lvl).length);
+            // 修正：單次考試統計圖表使用 activeExam.students，
+            // 不再使用 filteredStudents，避免搜尋／篩選後圖表跟著變動。
+            const activeExam = getCurrentExam();
+            const students = activeExam.students;
+
+            const essayCounts = [6, 5, 4, 3, 2].map(lvl => students.filter(s => s.essay === lvl).length);
             essayChartInstance.data.datasets[0].data = essayCounts;
             essayChartInstance.update();
 
             const classCountsMap = {};
-            filteredStudents.forEach(s => {
+            students.forEach(s => {
                 classCountsMap[s.classNum] = (classCountsMap[s.classNum] || 0) + 1;
             });
 
@@ -1608,9 +1661,10 @@
         function renderComparisonDashboard() {
             if (!trendChartInstance || !essayCompareChartInstance) return;
 
-            const examTitles = exams.map(e => e.title.replace('學習成就評量', '模考'));
-            const countData = exams.map(e => e.students.length);
-            const avgCreditsData = exams.map(e => {
+            const orderedExams = getSortedExams(); // Step 31-33: ordered by examNo, not array insertion order
+            const examTitles = orderedExams.map(e => e.title.replace('學習成就評量', '模考'));
+            const countData = orderedExams.map(e => e.students.length);
+            const avgCreditsData = orderedExams.map(e => {
                 if (e.students.length === 0) return 0;
                 return (e.students.reduce((sum, s) => sum + s.credits, 0) / e.students.length).toFixed(2);
             });
@@ -1622,9 +1676,9 @@
             trendChartInstance.update();
 
             // Update Essay Comparison Stacked Chart
-            const essay6Data = exams.map(e => e.students.filter(s => s.essay === 6).length);
-            const essay5Data = exams.map(e => e.students.filter(s => s.essay === 5).length);
-            const essay4Data = exams.map(e => e.students.filter(s => s.essay === 4).length);
+            const essay6Data = orderedExams.map(e => e.students.filter(s => s.essay === 6).length);
+            const essay5Data = orderedExams.map(e => e.students.filter(s => s.essay === 5).length);
+            const essay4Data = orderedExams.map(e => e.students.filter(s => s.essay === 4).length);
 
             essayCompareChartInstance.data.labels = examTitles;
             essayCompareChartInstance.data.datasets[0].data = essay6Data;
@@ -1632,6 +1686,7 @@
             essayCompareChartInstance.data.datasets[2].data = essay4Data;
             essayCompareChartInstance.update();
 
+            // Render Student Individual Progress Table
             renderStudentProgressTable();
         }
 
@@ -1642,7 +1697,7 @@
             if (exams.length < 2) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="py-8 text-center text-slate-400">
+                        <td colspan="7" class="py-8 text-center text-slate-400">
                             <i class="fa-solid fa-circle-info text-2xl mb-1 block"></i>
                             請匯入至少第 2 次模擬考資料以查看個案跨考次進退步比對
                         </td>
@@ -1652,12 +1707,13 @@
             }
 
             const currentExam = getCurrentExam();
-            const currentIndex = exams.findIndex(e => e.id === currentExamId);
-            const previousExam = currentIndex > 0 ? exams[currentIndex - 1] : exams[0];
+            // Step 32 bug fix: resolve the previous exam via examNo ordering, never by raw array position
+            const previousExam = getPreviousExam(currentExam.id) || getSortedExams()[0];
 
             document.getElementById('colHeaderExamPrevious').textContent = `${previousExam.title.substring(0, 7)} 積點`;
             document.getElementById('colHeaderExamCurrent').textContent = `${currentExam.title.substring(0, 7)} 積點`;
 
+            // Build dictionary of previous exam students for fast lookup (Key: Name + Class)
             const prevMap = new Map();
             previousExam.students.forEach(s => {
                 prevMap.set(`${s.name}_${s.classNum}`, s);
@@ -1703,11 +1759,6 @@
                             <span class="inline-block px-2 py-0.5 rounded ${diffClass}">${diffText}</span>
                         </td>
                         <td class="py-2.5 px-3 text-center">${essayDiffText}</td>
-                        <td class="py-2.5 px-3 text-center">
-                            <button onclick="openStudentDetailModal('${s.name}', '${s.classNum}')" class="text-xs text-indigo-600 hover:text-indigo-900 font-bold">
-                                詳細
-                            </button>
-                        </td>
                     </tr>
                 `;
             });
@@ -1715,83 +1766,23 @@
             tbody.innerHTML = html;
         }
 
+        // Toggle Comparison View Section
         function toggleComparisonView() {
-            const content = document.getElementById('comparisonContent');
-            const btn = document.getElementById('btnToggleCompare');
+            const sec = document.getElementById('comparisonSection');
             isShowComparison = !isShowComparison;
             if (isShowComparison) {
-                content.classList.remove('hidden');
-                btn.innerHTML = `<i class="fa-solid fa-eye-slash mr-1"></i> 隱藏比較`;
+                sec.classList.remove('hidden');
+                document.getElementById('btnToggleCompare').innerHTML = `<i class="fa-solid fa-chart-line"></i> 隱藏跨考次比較`;
             } else {
-                content.classList.add('hidden');
-                btn.innerHTML = `<i class="fa-solid fa-eye mr-1"></i> 顯示比較`;
+                sec.classList.add('hidden');
+                document.getElementById('btnToggleCompare').innerHTML = `<i class="fa-solid fa-chart-line"></i> 顯示跨考次比較`;
             }
-        }
-
-        // Student Detail / Historical Modal
-        function openStudentDetailModal(name, classNum) {
-            document.getElementById('detailModalStudentName').textContent = `${name} 學生歷次成效`;
-            document.getElementById('detailModalStudentClass').textContent = `班級：${classNum} 班`;
-
-            const tbody = document.getElementById('detailModalHistoryBody');
-            const notice = document.getElementById('detailSingleExamNotice');
-            tbody.innerHTML = '';
-
-            let lastCredits = null;
-            let recordCount = 0;
-
-            exams.forEach(ex => {
-                const s = ex.students.find(item => item.name === name && item.classNum === classNum);
-                if (s) {
-                    recordCount++;
-                    let diffText = '首度進榜';
-                    let diffClass = 'text-slate-500';
-
-                    if (lastCredits !== null) {
-                        const diff = s.credits - lastCredits;
-                        if (diff > 0) {
-                            diffText = `+${diff} 點 (進步)`;
-                            diffClass = 'text-emerald-600 font-bold';
-                        } else if (diff < 0) {
-                            diffText = `${diff} 點 (退步)`;
-                            diffClass = 'text-rose-600 font-bold';
-                        } else {
-                            diffText = '持平';
-                            diffClass = 'text-slate-500';
-                        }
-                    }
-                    lastCredits = s.credits;
-
-                    const tr = document.createElement('tr');
-                    tr.className = 'border-b border-slate-100 hover:bg-slate-50';
-                    tr.innerHTML = `
-                        <td class="py-2.5 px-3 font-semibold text-slate-800">${ex.title}</td>
-                        <td class="py-2.5 px-3 text-center font-bold text-slate-700">${s.score}</td>
-                        <td class="py-2.5 px-3 text-center font-black text-indigo-900">${s.credits} 點</td>
-                        <td class="py-2.5 px-3 text-center font-bold text-amber-700">${s.essay} 級分</td>
-                        <td class="py-2.5 px-3 text-center ${diffClass}">${diffText}</td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
-
-            if (recordCount <= 1) {
-                notice.classList.remove('hidden');
-            } else {
-                notice.classList.add('hidden');
-            }
-
-            document.getElementById('studentDetailModal').classList.remove('hidden');
-        }
-
-        function closeStudentDetailModal() {
-            document.getElementById('studentDetailModal').classList.add('hidden');
         }
 
         // Modal Controls for Import
         function openImportModal() {
-            if (!checkAdminPermission()) return;
-            document.getElementById('inputExamTitle').value = `第 ${exams.length + 1} 次學習成就評量 (5A)`;
+            if (!requireAdmin('匯入新考次')) return;
+            document.getElementById('inputExamTitle').value = `第 ${getNextExamNo()} 次學習成就評量 (5A)`;
             document.getElementById('importModal').classList.remove('hidden');
         }
 
@@ -1808,13 +1799,13 @@
             if (type === 'csv') {
                 areaCsv.classList.remove('hidden');
                 areaText.classList.add('hidden');
-                btnCsv.className = 'py-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
-                btnText.className = 'py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
+                btnCsv.className = 'py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
+                btnText.className = 'py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
             } else {
                 areaCsv.classList.add('hidden');
                 areaText.classList.remove('hidden');
-                btnText.className = 'py-2 text-xs font-bold rounded-xl border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
-                btnCsv.className = 'py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
+                btnText.className = 'py-2 text-xs font-bold rounded-lg border border-indigo-600 bg-indigo-50 text-indigo-800 flex items-center justify-center gap-2';
+                btnCsv.className = 'py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2';
             }
         }
 
@@ -1827,15 +1818,15 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 uploadedCsvContent = e.target.result;
-                showToast("已載入 CSV 檔案！", "fa-file-csv", "text-emerald-400");
+                showToast("已成功載入 CSV 檔案內容！", "fa-file-csv", "text-emerald-400");
             };
             reader.readAsText(file, "UTF-8");
         }
 
         // Process Import Data
         function processImportData() {
-            if (!checkAdminPermission()) return;
-            const title = document.getElementById('inputExamTitle').value.trim() || `第 ${exams.length + 1} 次學習成就評量`;
+            if (!requireAdmin('匯入新考次')) return;
+            const title = document.getElementById('inputExamTitle').value.trim() || `第 ${getNextExamNo()} 次學習成就評量`;
             let rawText = uploadedCsvContent;
 
             const isTextTab = !document.getElementById('areaImportText').classList.contains('hidden');
@@ -1850,27 +1841,28 @@
 
             const parsedStudents = parseCsvText(rawText);
             if (parsedStudents.length === 0) {
-                alert("無有效的學生資料列，請確認資料格式 (編號, 班級, 姓名, 總積分, 總積點, 作文級分)");
+                alert("無有效的學生資料列，請確認資料格式是否正確 (編號, 班級, 姓名, 總積分, 總積點, 作文級分)");
                 return;
             }
 
             const newExamId = `exam_${Date.now()}`;
             exams.push({
                 id: newExamId,
-                examNo: exams.length + 1,
+                examNo: getNextExamNo(),
                 title: title,
                 date: new Date().toISOString().slice(0, 7),
                 students: parsedStudents
             });
 
-            saveExamsToStorage(exams);
             currentExamId = newExamId;
             renderExamSelector();
             updateActiveExamData();
             closeImportModal();
+            saveToStorage();
             showToast(`成功匯入 ${parsedStudents.length} 筆資料並成立『${title}』！`, "fa-circle-check", "text-emerald-400");
         }
 
+        // Parse CSV or Tab delimited string
         function parseCsvText(text) {
             const lines = text.split(/\r?\n/);
             const result = [];
@@ -1878,6 +1870,7 @@
             lines.forEach((line) => {
                 if (!line.trim()) return;
                 const parts = line.split(/,|\t/);
+                // Skip header line
                 if (parts[0].includes('編號') || parts[2] === '姓名') return;
 
                 if (parts.length >= 6) {
@@ -1897,15 +1890,18 @@
             return result;
         }
 
-        // Quick Preset Sample Generator for Testing
+        // Quick Preset Sample Generator for Exam 2
         function loadSampleExam2() {
+            if (!requireAdmin('載入範例考次')) return;
             if (exams.some(e => e.title.includes('第 2 次'))) {
                 showToast("已存在第 2 次模擬考資料", "fa-circle-info", "text-indigo-400");
                 return;
             }
 
+            // Simulate progress for exam 2
             const exam1Students = exams[0].students;
             const sample2Students = exam1Students.map(s => {
+                // Random progress -1 to +2 credits
                 const delta = Math.floor(Math.random() * 4) - 1;
                 const newCredits = Math.min(35, Math.max(26, s.credits + delta));
                 const essayDelta = Math.random() > 0.7 ? 1 : 0;
@@ -1916,20 +1912,22 @@
             const newExamId = `exam_sample_2`;
             exams.push({
                 id: newExamId,
-                examNo: 2,
+                examNo: getNextExamNo(),
                 title: "第 2 次學習成就評量 (5A)",
                 date: "2026-11",
                 students: sample2Students
             });
 
-            saveExamsToStorage(exams);
             currentExamId = newExamId;
             renderExamSelector();
             updateActiveExamData();
-            showToast("已生成並載入第 2 次模擬考數據！", "fa-wand-magic-sparkles", "text-amber-400");
+            saveToStorage();
+            showToast("已成功自動生成並載入『第 2 次學習成就評量』測試數據！", "fa-wand-magic-sparkles", "text-amber-400");
         }
 
+        // Quick Preset Sample Generator for Exam 3
         function loadSampleExam3() {
+            if (!requireAdmin('載入範例考次')) return;
             if (!exams.some(e => e.title.includes('第 2 次'))) {
                 loadSampleExam2();
             }
@@ -1941,7 +1939,7 @@
 
             const exam2Students = exams.find(e => e.title.includes('第 2 次')).students;
             const sample3Students = exam2Students.map(s => {
-                const delta = Math.floor(Math.random() * 3);
+                const delta = Math.floor(Math.random() * 3); // 0 to 2 progress
                 const newCredits = Math.min(35, s.credits + delta);
                 return { ...s, credits: newCredits };
             });
@@ -1949,17 +1947,17 @@
             const newExamId = `exam_sample_3`;
             exams.push({
                 id: newExamId,
-                examNo: 3,
+                examNo: getNextExamNo(),
                 title: "第 3 次會考前會考 (5A)",
                 date: "2027-02",
                 students: sample3Students
             });
 
-            saveExamsToStorage(exams);
             currentExamId = newExamId;
             renderExamSelector();
             updateActiveExamData();
-            showToast("已生成並載入第 3 次模擬考數據！", "fa-wand-magic-sparkles", "text-amber-400");
+            saveToStorage();
+            showToast("已成功自動生成並載入『第 3 次會考前會考』測試數據！", "fa-wand-magic-sparkles", "text-amber-400");
         }
 
         function loadSampleExamData() {
@@ -1967,8 +1965,9 @@
             document.getElementById('areaImportCsv').classList.add('hidden');
             document.getElementById('areaImportText').classList.remove('hidden');
             
+            // Build text sample
             let sampleText = "編號,班級,姓名,總積分,總積點,作文級分\n";
-            exams[0].students.slice(0, 15).forEach((s) => {
+            exams[0].students.slice(0, 15).forEach((s, idx) => {
                 sampleText += `${s.id},${s.classNum},${s.name},30,${Math.min(35, s.credits + 1)},${s.essay}\n`;
             });
 
@@ -1978,6 +1977,7 @@
 
         // Export Active Data to CSV
         function exportCSV() {
+            if (!requireAdmin('匯出 CSV')) return;
             const activeExam = getCurrentExam();
             let csvContent = "\uFEFF";
             csvContent += "編號,班級,姓名,總積分,總積點,作文級分\n";
@@ -1995,12 +1995,12 @@
             link.click();
             document.body.removeChild(link);
 
-            showToast(`已匯出『${activeExam.title}』 CSV 試算表！`, "fa-file-csv", "text-emerald-400");
+            showToast(`已成功下載『${activeExam.title}』 CSV 試算表！`, "fa-file-csv", "text-emerald-400");
         }
 
         // Single Student Management
         function openAddModal() {
-            if (!checkAdminPermission()) return;
+            if (!requireAdmin('新增學生')) return;
             const activeExam = getCurrentExam();
             document.getElementById('modalTitle').textContent = `新增學生至 ${activeExam.title}`;
             document.getElementById('editIndex').value = "-1";
@@ -2013,7 +2013,7 @@
         }
 
         function openEditModal(id) {
-            if (!checkAdminPermission()) return;
+            if (!requireAdmin('編輯學生資料')) return;
             const activeExam = getCurrentExam();
             const student = activeExam.students.find(s => s.id === id);
             if (!student) return;
@@ -2034,8 +2034,7 @@
 
         function saveStudent(e) {
             e.preventDefault();
-            if (!checkAdminPermission()) return;
-
+            if (!requireAdmin('儲存學生資料')) return;
             const activeExam = getCurrentExam();
             const editId = parseInt(document.getElementById('editIndex').value);
             const id = parseInt(document.getElementById('inputID').value);
@@ -2046,81 +2045,228 @@
 
             if (editId === -1) {
                 activeExam.students.push({ id, classNum, name, score: 30, credits, essay });
-                showToast("已新增學生紀錄！", "fa-circle-check", "text-emerald-400");
+                showToast("已成功新增學生資料！", "fa-circle-check", "text-emerald-400");
             } else {
                 const index = activeExam.students.findIndex(s => s.id === editId);
                 if (index !== -1) {
                     activeExam.students[index] = { id, classNum, name, score: 30, credits, essay };
-                    showToast("已更新學生紀錄！", "fa-pen-to-square", "text-indigo-400");
+                    showToast("已成功更新學生資料！", "fa-pen-to-square", "text-indigo-400");
                 }
             }
 
-            saveExamsToStorage(exams);
             closeModal();
             populateClassFilterOptions();
             updateGlobalKPIs();
             applyFilters();
             renderComparisonDashboard();
+            saveToStorage();
         }
 
         function deleteStudent(id) {
-            if (!checkAdminPermission()) return;
+            if (!requireAdmin('刪除學生資料')) return;
             const activeExam = getCurrentExam();
             if (confirm(`確定要刪除編號 ${id} 的學生紀錄嗎？`)) {
                 activeExam.students = activeExam.students.filter(s => s.id !== id);
-                saveExamsToStorage(exams);
                 populateClassFilterOptions();
                 updateGlobalKPIs();
                 applyFilters();
                 renderComparisonDashboard();
-                showToast("已刪除該筆紀錄", "fa-trash-can", "text-rose-400");
+                saveToStorage();
+                showToast("已成功刪除該筆紀錄", "fa-trash-can", "text-rose-400");
             }
         }
 
-        // Backup & Restore
-        function backupData() {
-            if (!checkAdminPermission()) return;
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exams, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            const dateStr = new Date().toISOString().slice(0, 10);
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `陽明國中_5A_資料備份_${dateStr}.json`);
-            document.body.appendChild(dlAnchorElem);
-            dlAnchorElem.click();
-            dlAnchorElem.remove();
-            showToast("已完成 JSON 資料備份下載！", "fa-box-archive", "text-emerald-400");
-        }
-
-        function restoreData(event) {
-            if (!checkAdminPermission()) return;
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!confirm('⚠️ 確定要還原資料嗎？\n目前系統的所有模擬考資料將被備份檔案完全取代。')) {
-                event.target.value = '';
+        // ==================================================================
+        // Exam Deletion (admin only) - Step 5 / 28-30
+        // ==================================================================
+        function requestDeleteExam() {
+            if (!requireAdmin('刪除考次')) return;
+            if (exams.length <= 1) {
+                showToast('至少需保留一次考次資料，無法刪除', 'fa-circle-exclamation', 'text-amber-400');
                 return;
             }
+            const activeExam = getCurrentExam();
+            if (!confirm(`確定要刪除「${activeExam.title}」的整次考試資料嗎？此動作無法復原。`)) return;
+
+            exams = exams.filter(e => e.id !== activeExam.id);
+            const sorted = getSortedExams();
+            currentExamId = sorted[sorted.length - 1].id;
+            renderExamSelector();
+            updateActiveExamData();
+            saveToStorage();
+            showToast(`已刪除「${activeExam.title}」`, 'fa-trash-can', 'text-rose-400');
+        }
+
+        // ==================================================================
+        // Data Backup / Restore (Step 28-29, admin only)
+        // ==================================================================
+        function backupData() {
+            if (!requireAdmin('備份資料')) return;
+            const payload = { version: 2, exportedAt: new Date().toISOString(), exams: exams, currentExamId: currentExamId };
+            const dataStr = JSON.stringify(payload, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const today = new Date().toISOString().slice(0, 10);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `陽明國中_5A_資料備份_${today}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('已成功匯出資料備份 JSON 檔案', 'fa-box-archive', 'text-emerald-400');
+        }
+
+        let pendingRestoreData = null;
+
+        function triggerRestoreFile() {
+            if (!requireAdmin('還原資料')) return;
+            document.getElementById('restoreFileInput').click();
+        }
+
+        function handleRestoreFileSelect(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+            if (!requireAdmin('還原資料')) { evt.target.value = ''; return; }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const restoredData = JSON.parse(e.target.result);
-                    if (Array.isArray(restoredData) && restoredData.length > 0 && restoredData[0].students) {
-                        exams = restoredData;
-                        saveExamsToStorage(exams);
-                        currentExamId = exams[0].id;
-                        renderExamSelector();
-                        updateActiveExamData();
-                        showToast("已成功還原系統資料！", "fa-rotate-left", "text-emerald-400");
-                    } else {
-                        alert("無效的備份檔案格式！");
+                    const data = JSON.parse(e.target.result);
+                    if (!data || !Array.isArray(data.exams) || data.exams.length === 0) {
+                        throw new Error('備份檔案格式錯誤');
                     }
-                } catch(err) {
-                    alert("解析備份檔案失敗，請確認檔案為正確的 JSON 格式。");
+                    pendingRestoreData = data;
+                    document.getElementById('restoreConfirmModal').classList.remove('hidden');
+                } catch (err) {
+                    alert('備份檔案格式錯誤，無法還原（請確認上傳的是本系統匯出的 JSON 備份檔）');
                 }
-                event.target.value = '';
             };
-            reader.readAsText(file);
+            reader.readAsText(file, 'UTF-8');
+            evt.target.value = '';
+        }
+
+        function closeRestoreConfirmModal() {
+            document.getElementById('restoreConfirmModal').classList.add('hidden');
+            pendingRestoreData = null;
+        }
+
+        function confirmRestore() {
+            if (!requireAdmin('還原資料')) return;
+            if (!pendingRestoreData) return;
+
+            exams = pendingRestoreData.exams;
+            exams.forEach((ex, idx) => {
+                if (typeof ex.examNo !== 'number') ex.examNo = idx + 1;
+            });
+            currentExamId = (pendingRestoreData.currentExamId && exams.some(e => e.id === pendingRestoreData.currentExamId))
+                ? pendingRestoreData.currentExamId
+                : exams[0].id;
+
+            saveToStorage();
+            renderExamSelector();
+            updateActiveExamData();
+            closeRestoreConfirmModal();
+            showToast('已成功還原資料', 'fa-arrows-rotate', 'text-emerald-400');
+        }
+
+        // ==================================================================
+        // Student Detail Modal - 查看歷次表現 (Step 24, available in browse mode)
+        // ==================================================================
+        function openStudentDetail(name, classNum) {
+            const sorted = getSortedExams();
+            const records = [];
+            sorted.forEach(ex => {
+                const st = ex.students.find(s => s.name === name && s.classNum === classNum);
+                if (st) {
+                    records.push({
+                        examTitle: ex.title,
+                        examNo: ex.examNo,
+                        credits: st.credits,
+                        essay: st.essay
+                    });
+                }
+            });
+
+            if (records.length === 0) return;
+
+            document.getElementById('detailStudentName').textContent = name;
+            document.getElementById('detailStudentClass').textContent = `${classNum} 班`;
+
+            const tbody = document.getElementById('detailTableBody');
+            tbody.innerHTML = records.map(r => `
+                <tr>
+                    <td class="py-2.5 px-3 font-medium text-slate-700">${r.examTitle}</td>
+                    <td class="py-2.5 px-3 text-center font-bold text-indigo-900">${r.credits} 點</td>
+                    <td class="py-2.5 px-3 text-center">${r.essay} 級分</td>
+                </tr>
+            `).join('');
+
+            const chartsWrap = document.getElementById('detailChartsWrap');
+            const singleNotice = document.getElementById('detailSingleNotice');
+
+            if (records.length < 2) {
+                // Do not fabricate trend data that doesn't exist (Step 24 requirement)
+                chartsWrap.classList.add('hidden');
+                singleNotice.classList.remove('hidden');
+            } else {
+                chartsWrap.classList.remove('hidden');
+                singleNotice.classList.add('hidden');
+
+                if (detailCreditsChart) { detailCreditsChart.destroy(); detailCreditsChart = null; }
+                if (detailEssayChart) { detailEssayChart.destroy(); detailEssayChart = null; }
+
+                const labels = records.map(r => r.examTitle.replace('學習成就評量', '模考'));
+
+                detailCreditsChart = new Chart(document.getElementById('detailCreditsChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '積點',
+                            data: records.map(r => r.credits),
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { min: 0, max: 35 } }
+                    }
+                });
+
+                detailEssayChart = new Chart(document.getElementById('detailEssayChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '作文級分',
+                            data: records.map(r => r.essay),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { min: 0, max: 6 } }
+                    }
+                });
+            }
+
+            document.getElementById('studentDetailModal').classList.remove('hidden');
+        }
+
+        function closeStudentDetailModal() {
+            document.getElementById('studentDetailModal').classList.add('hidden');
         }
 
         // Toast Helper
@@ -2130,7 +2276,7 @@
             const toastIcon = document.getElementById('toastIcon');
 
             toastMsg.textContent = msg;
-            toastIcon.className = `fa-solid ${iconClass} ${iconColor} text-lg`;
+            toastIcon.className = `fa-solid ${iconClass} ${iconColor}`;
 
             toast.classList.remove('opacity-0', 'pointer-events-none');
             toast.classList.add('opacity-100');
